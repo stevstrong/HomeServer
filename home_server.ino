@@ -219,7 +219,8 @@ void loop()
   if ( my_client.available() ) {
     while ( my_client.available() ) {
       byte data = my_client.read();
-      if (data Serial.print(data, HEX);
+      if (data<16) Serial.print('0');
+      Serial.print(data, HEX);
       delay(5);
     }
     Serial.println();
