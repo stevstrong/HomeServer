@@ -193,8 +193,8 @@ void loop()
     Serial.println(F("*************************************"));
     while ( s_client.connected() ) {
       while ( s_client.available() ) {
-      char chr = s_client.read();
-      Serial.print(chr);
+        char chr = s_client.read();
+        Serial.print(chr);
       }
       Serial.println(F("*************************************"));
       if (!gotAMessage) {
