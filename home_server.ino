@@ -54,6 +54,26 @@ void setup()
   Serial.println(Ethernet.localIP());
   ConnectToHost();
 }
+/////////////////////////////////////////////////////////////////
+void ConnectToHost(void)
+{
+  static int repl = 0;
+  Serial.print("connecting to host ... ");
+  // if you get a connection, report back via serial:
+  while ( repl==0 )
+  repl = my_client.connect(host_ip, 8088);
+  if ( repl>0)
+    Serial.println("done.");
+  else {
+    // if you didn't get a connection to the server:
+    Serial.print(F("failed: "));
+    if ( repl==-1 ) Serial.println(F("timed out."));
+    else if ( repl==-2 ) Serial.println(F("invalid server."));
+    else if ( repl==-3 ) Serial.println(F("truncated."));
+    else if ( repl==-4 ) Serial.println(F("invalid response"));
+    else Serial.println(repl);
+  }
+}
 ///////////////////////////////////////////////////////////////////////////////
 // send an NTP request to the time server at the given address
 ///////////////////////////////////////////////////////////////////////////////
@@ -163,26 +183,6 @@ void GetTime(void)
   // this is NTP time (seconds since Jan 1 1900):
   unsigned long secsSince1900 = highWord << 16 | lowWord;
   PrintDateTime(secsSince1900);
-}
-/////////////////////////////////////////////////////////////////
-void ConnectToHost(void)
-{
-  static int repl = 0;
-  Serial.print("connecting to host ... ");
-  // if you get a connection, report back via serial:
-  while ( repl==0 )
-  repl = my_client.connect(host_ip, 8088);
-  if ( repl>0)
-    Serial.println("done.");
-  else {
-    // if you didn't get a connection to the server:
-    Serial.print(F("failed: "));
-    if ( repl==-1 ) Serial.println(F("timed out."));
-    else if ( repl==-2 ) Serial.println(F("invalid server."));
-    else if ( repl==-3 ) Serial.println(F("truncated."));
-    else if ( repl==-4 ) Serial.println(F("invalid response"));
-    else Serial.println(repl);
-  }
 }
 ///////////////////////////////////////////////////////////////////
 EthernetClient s_client;
