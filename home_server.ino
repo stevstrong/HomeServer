@@ -3,7 +3,6 @@
 
 // Ethernet
 static byte mymac[] = { 0x10,0x69,0x69,0x2D,0x30,0x31 };
-//static byte myip[] = {192,168,100,57};
 static byte host_ip[] = {192,168,100,40};
 
 IPAddress myip(192,168,100, 57);
@@ -11,15 +10,11 @@ IPAddress gateway(192,168,100, 1);
 IPAddress subnet(255, 255, 0, 0);
 #define timeServer gateway
 
+// Initialize the Ethernet server and client libraries
 EthernetServer my_server(80);
-boolean gotAMessage = false; // whether or not you got a message from the client yet
-// Initialize the Ethernet client library
-// with the IP address and port of the server
-// that you want to connect to (port 23 is default for telnet;
-// if you're using Processing's ChatServer, use port 10002):
 EthernetClient my_client;
 
-// NTP conversion
+// NTP
 #define SECONDS_IN_DAY 86400
 #define START_YEAR 1900
 #define TIME_ZONE +1
@@ -29,6 +24,7 @@ byte packetBuffer[ NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing pack
 EthernetUDP Udp;
 
 static unsigned long time;
+boolean gotAMessage = false; // whether or not you got a message from the client yet
 char date_str[9]; // 8 chars + ending 0
 char time_str[9]; // 8 chars + ending 0
 char file_str[13]; // 12 chars + ending 0
