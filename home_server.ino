@@ -194,36 +194,31 @@ void loop()
   s_client = my_server.available();
   if ( s_client )
   {
-  Serial.println(F("*************************************"));
-  while ( s_client.connected() ) {
-    while ( s_client.available() ) {
-    char chr = s_client.read();
-    Serial.print(chr);
-    }
     Serial.println(F("*************************************"));
-    // echo the bytes back to the client:
-    //my_server.write(thisChar);
-    // echo the bytes to the server as well:
-    //Serial.println(F("Answering to client:"));
-    if (!gotAMessage) {
-      //my_server.println(F("HTTP/1.0 404 Not Found\r\n\r\nNot Found"));
-      s_client.println(F("HTTP/1.1 200 OK"));
-      s_client.println(F("Content-Type: text/html"));
-      s_client.println(F("Connection: close")); // the connection will be closed after completion of the response
-      s_client.println();
-      s_client.println(F("Hello, client!"));
-      gotAMessage = true;
-      Serial.println(F("Sent long reply."));
-    } else {
-      Serial.println(F("Sent short reply."));
-      s_client.println("OK");
+    while ( s_client.connected() ) {
+      while ( s_client.available() ) {
+      char chr = s_client.read();
+      Serial.print(chr);
+      }
+      Serial.println(F("*************************************"));
+      if (!gotAMessage) {
+        //my_server.println(F("HTTP/1.0 404 Not Found\r\n\r\nNot Found"));
+        s_client.println(F("HTTP/1.1 200 OK"));
+        s_client.println(F("Content-Type: text/html"));
+        s_client.println(F("Connection: close")); // the connection will be closed after completion of the response
+        s_client.println();
+        s_client.println(F("Hello, client!"));
+        gotAMessage = true;
+        Serial.println(F("Sent long reply."));
+      } else {
+        Serial.println(F("Sent short reply."));
+        s_client.println("OK");
+      }
+      break;
     }
-    break;
+    s_client.stop();
+    Serial.println(F("-------------------------------------"));
   }
-  s_client.stop();
-  Serial.println(F("-------------------------------------"));
-  }
-
   // do here client tasks, send command and listen to answer
   if ( my_client.available() ) {
     while ( my_client.available() ) {
