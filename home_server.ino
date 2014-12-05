@@ -102,16 +102,16 @@ void PrintDateTime(uint32_t timeStamp)
     seconds = SECONDS_IN_DAY * days_in_month[month];
     if(isLeapYear(year) && month == 1) seconds = SECONDS_IN_DAY * 29;
     if(timeStamp >= seconds) {
-    timeStamp -= seconds;
-    month++;
+      timeStamp -= seconds;
+      month++;
     } else break;
   }
   month++;
   day = 1;
   while(1) {
     if(timeStamp >= SECONDS_IN_DAY) {
-    timeStamp -= SECONDS_IN_DAY;
-    day++;
+      timeStamp -= SECONDS_IN_DAY;
+      day++;
     } else break;
   }
   unsigned int hour = timeStamp / 3600;
