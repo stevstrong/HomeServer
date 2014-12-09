@@ -54,12 +54,12 @@ void setup()
 void ConnectToHost(void)
 {
   static int repl = 0;
-  Serial.print("connecting to host ... ");
+  Serial.print(F("connecting to host ... "));
   // if you get a connection, report back via serial:
   while ( repl==0 )
   repl = my_client.connect(host_ip, 8088);
   if ( repl>0)
-    Serial.println("done.");
+    Serial.println(F("done."));
   else {
     // if you didn't get a connection to the server:
     Serial.print(F("failed: "));
