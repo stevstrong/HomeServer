@@ -1,0 +1,61 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='UTF-8'>
+	<title>My homepage</title>
+	<style>
+		.mys {
+			position:absolute;
+			color:yellow;
+			font-family:Arial,Helvetica,
+			sans-serif; font-size:50px
+		}
+		.myp {visibility:hidden}
+	</style>
+</head>
+<body>
+	<p>&emsp;<a href='/'>Home</a>&emsp;<a href='/files/'>SD-Card</a></p>
+	<div>
+		<img style="position:absolute; left:10px; top:70px" src="/files/web/img/background.png" alt="Vitotronic 200">
+		<div class="mys" style="left: 60px; top:100px" id="dateTime">current date and time</div>
+		<div class="mys" style="left:120px; top:330px" id="Temp-Aussen">outer temperature</div>
+		<div class="mys" style="left:320px; top:400px" id="Temp-WW">warm water</div>
+		<div class="mys" style="left:580px; top:480px" id="Temp-Hzg-VL">vorlauf</div>
+		<div class="mys" style="left:320px; top:480px" id="Temp-Hzg-RL">rücklauf</div>
+		<img class="mys" style="left:650px; top:250px" id="Status-Pumpe-Hzg" src="/files/web/img/pump_on.png">
+		<img class="mys" style="left:650px; top:400px" id="Status-Pumpe-WW" src="/files/web/img/ww.png">
+		<img class="mys" style="left:650px; top:330px" id="Status-Verdichter" src="/files/web/img/compressor.png">
+	</div>
+	<script type="text/javascript">
+		function ParseData() {
+			// convert the read data into an array
+			var elem = document.getElementById("crtDateTime");
+			if ( elem )
+				document.getElementById("dateTime").innerHTML = elem.innerHTML;
+			if ( !document.getElementById("params") || !document.getElementById("values") )
+				alert ("No parameters or values found!");
+			var repl = document.getElementById("params").innerHTML;
+			var arr1 = repl.split(",");
+			if ( arr1[0]!="Time" ) { // header row with parameters
+				alert ("Invalid parameters!");
+				return;
+			}
+			var arr2 = document.getElementById("values").innerHTML.split(",");
+			for (var indx in arr1) {
+				if (indx==0) continue;
+				if ( arr1[indx].slice(0,6)=="Status" ) {
+					if ( arr2[indx]==0 )
+						document.getElementById(arr1[indx]).style.visibility = "hidden";
+				} else if ( arr1[indx].slice(0,5)!="Strom" )
+					document.getElementById(arr1[indx]).innerHTML = arr2[indx];
+			}
+		}
+	</script>
+</body>
+</html>
+<div class='myp'>
+	<p id='crtDateTime'>Saturday - 2015.06.06 - 12:12</p>
+	<p id="params">Time,Temp-Aussen,Temp-Hzg-VL,Temp-Hzg-RL,Temp-WW,Status-Verdichter,Status-Pumpe-Hzg,Status-Pumpe-WW,Strom-H_abs,Strom-H_rel</p>
+	<p id="values">00:20,18.9,27.0,22.3,45.6,0,1,0,65825,0</p>
+</div>
+<script>ParseData();</script>

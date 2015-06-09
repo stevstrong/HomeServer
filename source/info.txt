@@ -1,0 +1,25 @@
+
+
+
+VitoClient call tree:
+---------------------
+
+Vito_ClientCheck	->	Vito_ResetPoll	->	Vito_ClientConnect
+										->	Vito_ClientGetReply	->	Vito_ReceiveData
+
+Vito_ClientSendGet	->	Vito_ClientCheck
+					->	Vito_ClientSendCommand
+					->	Vito_ClientGetReply	->	Vito_ReceiveData
+
+Vito_ClientNewDay	->	Vito_BuildCommand
+					->	Vito_ClientSendGet
+					->	Vito_ClientSetVitoTime
+
+Vito_ClientSetVitoTime	->	Vito_BuildCommand
+						->	Vito_ClientSendGet
+						
+Vito_ReadParameters	->	Vito_BuildCommand
+					->	Vito_ClientSendGet
+					->	Vito_ParseRecData
+
+Time,Temp-Aussen,Temp-Hzg-VL,Temp-Hzg-RL,Temp-WW,Status-Verdichter,Status-Pumpe-Hzg,Status-Pumpe-WW,Strom-H_abs,Strom-H_rel
