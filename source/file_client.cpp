@@ -388,9 +388,6 @@ void File_LoadFileLine(void)
 /*****************************************************************************/
 void File_SendFile(EthernetClient cl)
 {
-//	byte txt = 0;
-//  if ( f_buf[0]=='P' || strstr_P(f_buf,PSTR(".htm"))>0 ) // is POST request or HTM file
-//	cl.println(F("HTTP/1.1 200 OK\r\nContent-Type: "));   // content type must be adapted to the requested file!!!
 	// check file type and add the corresponding descritpion to the HTTP header
 	if ( strstr_P(PATH, PSTR(".png"))>0 ) {
 		cl.println(F("HTTP/1.1 200 OK\r\nContent-Type: image/png\r\n"));
@@ -406,7 +403,6 @@ void File_SendFile(EthernetClient cl)
 	} else {
 //	if ( strstr_P(f_buf,PSTR(".htm"))>0 || strstr_P(f_buf,PSTR(".txt"))>0 || strstr_P(f_buf,PSTR(".js"))>0 ) {
 		cl.println(F("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n"));
-		//txt = 1;
 		// send in ASCII mode files: txt, js, htm, 
 		while (1) {
 			File_LoadFileLine(); // ascii mode
@@ -415,14 +411,12 @@ void File_SendFile(EthernetClient cl)
 		}
 		return;
 	}
-//	if ( txt ) {
-//	} else {  // binary mode
-		byte c;
-		while ( (c = file.read(f_buf, sizeof(f_buf)-1))> 0 ) {
-			WDG_RST;  // avoid WDG reset
-			cl.write(f_buf, c);
-		}
-//	}
+	// sending data in binary mode
+	byte c;
+	while ( (c = file.read(f_buf, sizeof(f_buf)-1))> 0 ) {
+		WDG_RST;  // avoid WDG reset
+		cl.write(f_buf, c);
+	}
 	file.close();  // close root.
 	f_buf[0] = 0;  // don't send elapsed time
 }
@@ -465,7 +459,7 @@ char * f_ptr;
 	if ( ( f_ptr = strstr_P(PATH, PSTR("readfile=")) )>0 ) {  //14-12-30.TXT)
 		// send requested record file. check if file exists
 #if _DEBUG_>0
-		Serial.println(F("sending file list."));
+		Serial.println(F("sending file."));
 #endif
 		// backup txt file
 		strcpy(f_buf+90, f_ptr+9);	// the file name already ends in a '0'
@@ -479,6 +473,18 @@ char * f_ptr;
 }
 /*****************************************************************************/
 /*****************************************************************************/
+char * String_Trim(char * inPtr)
+{
+	while ( *inPtr <= ' ' )	inPtr++;	// goto first valid char
+	char * retPtr = inPtr;	// store pointer
+	while ( *inPtr > ' ' )	inPtr++;	// goto end of string
+	inPtr = 0;	// mark end of string
+	if ( *(--inPtr) == '/' )
+		*inPtr = 0; // remove '/' from the end
+	return retPtr;
+}
+/*****************************************************************************/
+/*****************************************************************************/
 void File_CheckDirFile(EthernetClient cl)
 {
 byte index = 0;
@@ -486,15 +492,16 @@ byte index = 0;
 #if _DEBUG_>0
 	uint32_t tim = millis();
 	// print the file we want 
-	Serial.print(F("Checking requested: ")); Serial.println(PATH);
+	Serial.print(F("Checking request: ")); Serial.println(PATH);
 #endif
-	// check start page. If nothing specified, then the index pages should be transmitted.
-	if ( *f_ptr==0 )   {
-		strcpy_P(PATH,PSTR("web/index.htm"));
+	// check start page. If nothing specified, then the index pages should be redirected.
+	if ( *f_ptr==0 ) {
+		cl.println(F("HTTP/1.1 301 Moved Permanently\r\nLocation: web/index.htm\r\n"));
+		return;   // wait for next request with correct path
 	}
 	if ( strstr_P(PATH, PSTR("/index.htm"))>0 )
 		index = 1;
-	// remove leading "files" if the case
+	// remove leading "files" if it is there
 	if ( strncmp_P(PATH, PSTR("files"), 5)==0 )
 		f_ptr = PATH + 5;  // end of: /files^
 	else
@@ -506,7 +513,7 @@ byte index = 0;
 	}
 	// check if requested file/dir exists
 	if ( File_OpenFile(f_ptr) ) {
-		if ( *f_ptr==0 || file.isDir() || file.isSubDir() ) {  // root or directory?
+		if ( file.isDir() || file.isSubDir() ) {  // root or directory?
 			File_ListDir(cl);
 		} else {
 			File_SendFile(cl);
@@ -514,7 +521,7 @@ byte index = 0;
 			if ( index ) {
 				// send here the additional data
 				cl.print(F("<div class='myp'>\n<p id='crtDateTime'>"));
-				sprintf(s_buf, "%s \. %s \. %s", dayStr(weekday()), date_str, time_str);
+				sprintf_P(s_buf, PSTR("%s, 20%s, %s"), dayStr(weekday()), date_str, time_str);
 				cl.print(s_buf);
 				cl.print(F("</p>\n<p id='params'>"));
 				File_GetRecordLine(0);

@@ -47,7 +47,6 @@ void Ether_ServerReceiveData(EthernetClient cli)
    Serial.print(F("ether server received: "));
 #endif
   char c;
-  uint8_t nl_count = 0;
   s_ind = 0;
     // read and store the first header line only
     while ( cli.available() && s_ind<SERVER_BUFFER_MAX_SIZE )
@@ -56,9 +55,8 @@ void Ether_ServerReceiveData(EthernetClient cli)
 #if _DEBUG_>1
 //      if ( s_line>0 )  Serial.write(c);
 #endif
-      if ( c=='\r' )  continue;  // take next char
-      if ( c=='\n' )
-      	if ( nl_count++ >0 )	break;  // stop storing at second new line character - we need "Host: bla-bla"
+      if ( c=='\r' )   continue;  // don´t store CR, take next char
+      if ( c=='\n' )   break;  // stop storing data
       s_buf[s_ind++] = c;
     }
     // only store limited number of chars, the rest will be ignored.
@@ -113,7 +111,7 @@ void Ether_ServerCheckForClient(void)
     }
     if ( found==0 ) {
       Serial.print(F("recording new client: "));
-      sprintf(s_buf, "%u\.%u\.%u\.%u", remoteip[0], remoteip[1], remoteip[2], remoteip[3]);
+      sprintf_P(s_buf, PSTR("%u\.%u\.%u\.%u"), remoteip[0], remoteip[1], remoteip[2], remoteip[3]);
       Serial.println(s_buf);
       File_LogClient(s_buf);
     }
@@ -164,8 +162,8 @@ void Ether_PrintStandardHeader(EthernetClient cl)
 {
 	Ether_PrintSimpleHeader(cl);
 	cl.println(F("<!DOCTYPE HTML>\n<html>\n<head><meta charset='UTF-8'>\n<title>My homepage</title></head>\n"));
-	cl.println(F("<body>\n<p>&emsp;<a href='/'>Home</a>&emsp;<a href='/files/'>SD-Card</a></p>"));
-	cl.print(F("<p>It is ")); cl.print(dayStr(weekday())); cl.print(", 20"); cl.print(date_str); cl.print(", "); cl.print(time_str); cl.println(F("</p>"));
+	cl.println(F("<body>\n<h3>&emsp;<a href='/web/index.htm'>Home</a>&emsp;<a href='/files/'>SD-card</a>&emsp;<a href='/web/vitomon.htm'>Data GUI</a></h3>"));
+	cl.print(F("<p>It is ")); cl.print(dayStr(weekday())); cl.print(F(", 20")); cl.print(date_str); cl.print(F(", ")); cl.print(time_str); cl.println(F("</p>"));
 }
 /***********************************************************************************/
 /***********************************************************************************/
@@ -174,7 +172,6 @@ void Ether_ServerProcessData(EthernetClient cl)
 	uint32_t time0 = millis();
 	if ( strncmp_P(s_buf, PSTR("GET /"), 5)==0 )
 	{
-		//if ( s_buf[5]=='?' ) {  // requested a file or execute a command
 		if ( strncmp_P(s_buf+5, PSTR("?regmyip"), 8)==0 ) {  // requested a file or execute a command
 			// register IP -> allow access for 5 minutes
 			allow = 1;
@@ -208,7 +205,7 @@ bad_request_1:
       cl.println(F("HTTP/1.0 400 Bad Request\r\nContent-Type:text/plain\r\nConnection:close\r\n\r\nBad Request:"));
       cl.println(s_buf+5);
   }
-proc_end:
-  // send here required time info
+
+  // send here required processing time info
   if ( s_buf[0]!=0 ) { cl.print(F("\nPage sent in ")); cl.print(millis()-time0); cl.println(F(" ms.")); }
 }

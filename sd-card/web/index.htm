@@ -7,24 +7,24 @@
 		.mys {
 			position:absolute;
 			color:yellow;
-			font-family:Arial,Helvetica,sans-serif;
-			font-size:50px;
+			font-family:Arial,Helvetica,
+			sans-serif; font-size:45px
 		}
 		.myp {visibility:hidden}
 	</style>
 </head>
 <body>
-	<p>&emsp;<a href='/'>Home</a>&emsp;<a href='/files/'>SD-Card</a></p>
+	<h3>&emsp;<a href='/web/index.htm'>Home</a>&emsp;<a href='/files/'>SD-card</a>&emsp;<a href='/web/vitomon.htm'>Data GUI</a></h3>
 	<div>
-		<img style="position:absolute; left:10px; top:70px" src="/files/web/img/background.png" alt="Vitotronic 200">
-		<div class="mys" style="left: 60px; top:100px" id="dateTime">current date and time</div>
-		<div class="mys" style="left:120px; top:330px" id="Temp-Aussen">outer temperature</div>
-		<div class="mys" style="left:320px; top:400px" id="Temp-WW">warm water</div>
-		<div class="mys" style="left:580px; top:480px" id="Temp-Hzg-VL">vorlauf</div>
-		<div class="mys" style="left:320px; top:480px" id="Temp-Hzg-RL">rücklauf</div>
-		<img class="mys" style="left:650px; top:250px" id="Status-Pumpe-Hzg" src="/files/web/img/pump_on.png">
-		<img class="mys" style="left:650px; top:400px" id="Status-Pumpe-WW" src="/files/web/img/ww.png">
-		<img class="mys" style="left:650px; top:330px" id="Status-Verdichter" src="/files/web/img/compressor.png">
+		<img style="position:absolute; left:10px; top:70px" src="img/backgrnd.png" alt="Vitotronic 200">
+		<div class="mys" style="left: 30px; top:100px" id="dateTime">current date and time</div>
+		<div class="mys" style="left:130px; top:330px" id="Temp-Aussen">outer temperature</div>
+		<div class="mys" style="left:330px; top:400px" id="Temp-WW">warm water</div>
+		<div class="mys" style="left:330px; top:480px" id="Temp-Hzg-VL">vorlauf</div>
+		<div class="mys" style="left:590px; top:480px" id="Temp-Hzg-RL">rücklauf</div>
+		<img class="mys" style="left:650px; top:250px" id="Status-Pumpe-Hzg" src="img/pump-on.png">
+		<img class="mys" style="left:650px; top:400px" id="Status-Pumpe-WW" src="img/ww.png">
+		<img class="mys" style="left:650px; top:330px" id="Status-Verdichter" src="img/compress.png">
 	</div>
 	<script type="text/javascript">
 		function ParseData() {
@@ -53,3 +53,9 @@
 	</script>
 </body>
 </html>
+<div class='myp'>
+<p id='crtDateTime'>Wednesday, 2015-06-06, 12:12:12</p>
+<p id="params">Time,Temp-Aussen,Temp-Hzg-VL,Temp-Hzg-RL,Temp-WW,Status-Verdichter,Status-Pumpe-Hzg,Status-Pumpe-WW,Strom-H_abs,Strom-H_rel</p>
+<p id="values">00:20,18.9,27.0,22.3,45.6,0,1,0,65825,0</p>
+</div>
+<script>ParseData();</script>
