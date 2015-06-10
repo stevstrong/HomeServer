@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /** RC4 Stream Cipher
  *  http://www.wisdom.weizmann.ac.il/~itsik/RC4/rc4.html
  * -----------------------------------------------
@@ -74,3 +75,6 @@
     // it makes things a bit safer when obtrusive libraries
     // are around
 })(window.String, window.String.fromCharCode, window.Math.random);
+=======
+
+>>>>>>> origin/master
