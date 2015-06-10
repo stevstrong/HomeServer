@@ -12,7 +12,7 @@ Software description
 --------------------
 The software is using the Time (https://github.com/PaulStoffregen/Time) and SdFat (https://github.com/greiman/SdFat) libraries for Arduino.
 Each odd minute the time is updated from the local gateway Fritzbox acting as NTP server.
-Each even minute some parameters (temperature values and pump status information) are read out from the heat pump and stored on the SD-card. Also, the OCR-ed value of the actual mechanical power meter status received from the EnergyCam and is written to the SD-card, too.
+Each even minute some parameters (temperature values and pump status information) are read out from the heat pump and stored on the SD-card. Also, the OCR-ed actual value of the actual mechanical power meter is received from the EnergyCam and is written to the SD-card, too.
 The home index page (index.htm) shows their latest values together with actual date and time information.
 A more datailed graphical interface (vitomon.htm) shows the development of these parameters over a day.
 
