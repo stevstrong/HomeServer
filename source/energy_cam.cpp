@@ -229,7 +229,7 @@ uint8_t EC_Error(void)
   ec_client.stop();
   // add the two error code to the param_readings
   //sprintf(&param_readings[strlen(param_readings)], ",%u,%u", ec_state, mb_state);
-  sprintf(&param_readings[strlen(param_readings)], ",,");  // add blank values - avoid distorted plotting
+  sprintf_P(&param_readings[strlen(param_readings)], PSTR(",,"));  // add blank values - avoid distorted plotting
   return ec_state;
 }
 /****************************************************************************
@@ -310,8 +310,8 @@ void EC_StoreResult(void)
   // get diff
   ocrReading.diff = ocrReading.value - ocrReading.value0;
   // add OCR result to the param_readings
-  sprintf(&param_readings[strlen(param_readings)], ",%lu", ocrReading.value);
-  sprintf(&param_readings[strlen(param_readings)], ",%u", ocrReading.diff);
+  sprintf_P(&param_readings[strlen(param_readings)], PSTR(",%lu"), ocrReading.value);
+  sprintf_P(&param_readings[strlen(param_readings)], PSTR(",%u"), ocrReading.diff);
 #if _DEBUG_>0
   Serial.print(F("OCR value: "));
   Serial.print(ocrReading.value);

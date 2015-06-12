@@ -134,7 +134,6 @@ void Vito_ClientSetVitoTime(void)
 {
   // set date-time of Vito
   File_Log(PSTR("Setting Vito date and time."), NEW_ENTRY | ADD_NL | P_MEM);
-//$buf = BuildSendCommand($fp, "write", 'Strom-Datum', sprintf("%02x%02x%04x",GetMyDayOfMonth(),GetMyMonth(),GetMyYear()));
   signed char index = GetKeyIndex(wp_uhrzeit);
 #if _DEBUG_>0
   Serial.print(F("Setting Vito date-time parameter: ")); Serial.println(Vito_GetParamName(index));
@@ -172,13 +171,10 @@ void Vito_ClientSetVitoTime(void)
  /*****************************************************************************/
 void Vito_ClientNewDay(void)
 {
-	// do here pre-processing tasks such as:
+#if 0	// not needed because current not read by pulse
 	// - reset current counters of the Vito-bridge ->set new day
-	//todo: - set date-time of Vito
   File_Log(PSTR("Setting Vito bridge date and time."), NEW_ENTRY | ADD_NL | P_MEM);
-//  Serial.println(F("pre-processing..."));
 	// set new day for the Vito-bridge: send new date
-//$buf = BuildSendCommand($fp, "write", 'Strom-Datum', sprintf("%02x%02x%04x",GetMyDayOfMonth(),GetMyMonth(),GetMyYear()));
   signed char index = GetKeyIndex(strom_datum);
 #if _DEBUG_>0
   Serial.println(Vito_GetParamName(index));
@@ -197,6 +193,7 @@ void Vito_ClientNewDay(void)
 #endif
 //    File_LogError(PSTR("Strom-Datum could not get reply!"), NEW_ENTRY | ADD_NL | P_MEM);
   }
+#endif
   Vito_ClientSetVitoTime();
 }
 /*****************************************************************************/
@@ -207,7 +204,7 @@ void Vito_ReadParameters(void)
   // initialize parameter value string
   memset(param_readings, 0, sizeof(param_readings));
   // write time  if (j==0)
-  sprintf(param_readings, "%02i:%02i", hour(), minute());
+  sprintf_P(param_readings, PSTR("%02i:%02i"), hour(), minute());
   // read all parameters from the array 'read_params[]'
   int8_t index;
   byte j = 0;

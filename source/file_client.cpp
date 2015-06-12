@@ -175,7 +175,7 @@ void File_TestWrittenData(char * txt)
 void File_GetCurrentRecordFile(void)
 {
   // bild here the file dir/name, which contains the date
-  sprintf(f_buf, "RECORDS/%4u/%02u/%s", year(), month(), file_str);  // "RECORDS/2015/01/15-01-23.txt"
+  sprintf_P(f_buf, PSTR("RECORDS/%4u/%02u/%s"), year(), month(), file_str);  // "RECORDS/2015/01/15-01-23.txt"
 }
 /*****************************************************************************/
 /*****************************************************************************/
@@ -319,9 +319,9 @@ dir_t dir;
 		//client.print(F("</td><td>"));
 		File_BufAdd_P(PSTR("</td><td>"));
 		// write next cell: print modify date/time
-		sprintf(f_buf+f_ind, "%4u-%02u-%02u %02u:%02u:%02u",
-		int(FAT_YEAR(dir.lastWriteDate)), FAT_MONTH(dir.lastWriteDate), FAT_DAY(dir.lastWriteDate),
-		FAT_HOUR(dir.lastWriteTime), FAT_MINUTE(dir.lastWriteTime), FAT_SECOND(dir.lastWriteTime));
+		sprintf_P(f_buf+f_ind, PSTR("%4u-%02u-%02u %02u:%02u:%02u"),
+			int(FAT_YEAR(dir.lastWriteDate)), FAT_MONTH(dir.lastWriteDate), FAT_DAY(dir.lastWriteDate),
+			FAT_HOUR(dir.lastWriteTime), FAT_MINUTE(dir.lastWriteTime), FAT_SECOND(dir.lastWriteTime));
 		f_ind += 19;  // the length of date and time
 		//client.println(F("</td></tr>"));
 		File_BufAdd_P(PSTR("</td></tr>\n"));
@@ -401,8 +401,10 @@ void File_SendFile(EthernetClient cl)
 	if ( strstr_P(PATH, PSTR(".gif"))>0 ) {
 		cl.println(F("HTTP/1.1 200 OK\r\nContent-Type: image/gif\r\n"));
 	} else {
-//	if ( strstr_P(f_buf,PSTR(".htm"))>0 || strstr_P(f_buf,PSTR(".txt"))>0 || strstr_P(f_buf,PSTR(".js"))>0 ) {
+	if ( strstr_P(f_buf,PSTR(".htm"))>0 )
 		cl.println(F("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n"));
+	else
+		cl.println(F("HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\n"));
 		// send in ASCII mode files: txt, js, htm, 
 		while (1) {
 			File_LoadFileLine(); // ascii mode

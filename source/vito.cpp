@@ -297,11 +297,11 @@ byte Parse2Bytes(void)
 		int8_t a = x/10;	// store the integer part in the high byte
 		//if (sign) out.s.a = -out.s.a;	// adjust sign
 		uint8_t b = x%10;	// store the remainder in the low byte
-		if (sign)  sprintf((char*)rec_frame, "-%1i.%1u", a, b);
-		else      sprintf((char*)rec_frame, "%02i.%1u", a, b);
+		if (sign)  sprintf_P((char*)rec_frame, PSTR("-%1i.%1u"), a, b);
+		else      sprintf_P((char*)rec_frame, PSTR("%02i.%1u"), a, b);
 	} else if (vito_param.divid==1) {
 		//if (sign) x = -x;	// adjust sign
-		sprintf((char*)rec_frame, "%02i", x);
+		sprintf_P((char*)rec_frame, PSTR("%02i"), x);
 	}
 	else {
 #if _DEBUG_>1
@@ -347,9 +347,9 @@ uint8_t Parse4Bytes(void)
 		//in.x = in.x << 8;	// shift to upper 3 bytes
 		//in.x = in.x | temp;			// merge with the decimal byte
 		if ( sign ) x = ~x + 1;	// recover sign
-		sprintf((char*)rec_frame, "%i.%1i", x, temp);
+		sprintf_P((char*)rec_frame, PSTR("%i.%1i"), x, temp);
 	} else if (vito_param.divid==1)
-		sprintf((char*)rec_frame, "%i", x);
+		sprintf_P((char*)rec_frame, PSTR("%i"), x);
 	else {
 #if _DEBUG_>1
           Serial.print(F("ERROR: Parse4Bytes: parsed parameter has unkown divider!"));
