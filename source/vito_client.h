@@ -5,12 +5,13 @@
 
 #include <Ethernet.h>
 
-byte Vito_ClientCheck(void);
-void Vito_ClientInit(void);
+byte VitoClient_Check(void);
+void VitoClient_Init(void);
 void Vito_ProcessData(EthernetClient cl, char chr);
-void Vito_ReadParameters(void);
-void Vito_ClientNewDay(void);
-void Vito_ClientSetVitoTime(void);
+void VitoClient_ReadParameters(void);
+void VitoClient_NewDay(void);
+void VitoClient_SetVitoTime(void);
+void VitoClient_CheckDHW(void);
 
 extern EthernetClient vito_client;
 

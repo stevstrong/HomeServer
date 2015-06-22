@@ -20,6 +20,7 @@ extern vito_param_t vito_param;
 extern byte send_frame[];
 extern byte rec_frame[];
 extern char param_readings[PARAM_READINGS_SIZE];
+extern char param_name[];
 //
 void SaveParamsToSD(char * pars, char * vals);
 void ReadFileFromSD(void);
@@ -40,24 +41,25 @@ void Vito_GetParam(byte in);
 char * Vito_GetParamName(byte in);
 
 signed char GetKeyIndex(const char * key);
-uint8_t Vito_BuildCommand(byte in, char cmd);//, void * value);
+uint8_t Vito_BuildCommand(byte in, char cmd);
 
-extern const char temp_aussen[] 		PROGMEM;
-extern const char temp_luft_ein[]		PROGMEM;
-extern const char temp_luft_aus[]		PROGMEM;
-extern const char temp_hzg_vl[]		        PROGMEM;
-extern const char temp_hzg_rl[]		        PROGMEM;
-extern const char temp_ww[]			PROGMEM;
+extern const char temp_aussen[]				PROGMEM;
+extern const char temp_luft_ein[]			PROGMEM;
+extern const char temp_luft_aus[]			PROGMEM;
+extern const char temp_hzg_vl[]				PROGMEM;
+extern const char temp_hzg_rl[]				PROGMEM;
+extern const char temp_ww[]					PROGMEM;
+extern const char temp_ww_soll[]				PROGMEM;
 extern const char status_verdichter[]		PROGMEM;
 extern const char status_pumpe_hzg[]		PROGMEM;
-extern const char status_pumpe_ww[]		PROGMEM;
+extern const char status_pumpe_ww[]			PROGMEM;
 extern const char verdichter_betriebstd[]	PROGMEM;
-extern const char verdichter_nrstarts[]	        PROGMEM;
-extern const char wp_uhrzeit[]			PROGMEM;
-extern const char wp_betriebsart[]              PROGMEM;
-extern const char strom_wp[]			PROGMEM;
-extern const char strom_h[]			PROGMEM;
-extern const char strom_datum[]		        PROGMEM;
+extern const char verdichter_nrstarts[]	PROGMEM;
+extern const char wp_uhrzeit[]				PROGMEM;
+extern const char wp_betriebsart[]			PROGMEM;
+extern const char strom_wp[]					PROGMEM;
+extern const char strom_h[]					PROGMEM;
+extern const char strom_datum[]				PROGMEM;
 
 #endif
 

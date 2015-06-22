@@ -39,7 +39,7 @@ void setup()
   Time_ClientInit();
   File_ClientInit(CS_SD_CARD);
   UART1_Init();
-  Vito_ClientInit();
+  VitoClient_Init();
   EC_Init();
   minute_old = 60;
 #if _DEBUG_>0
@@ -144,14 +144,16 @@ void loop()
     // new day events of Vito cient
     if ( Time_NewDay() ) {
       File_NewDay();
-      Vito_ClientNewDay();
+      VitoClient_NewDay();
       EC_NewDay();
     }
     // read Vito parameters each even minute
     if ( (minute_now%2)==0 ) {
-      Vito_ReadParameters();
+      VitoClient_ReadParameters();
       EC_ReadValue();
       File_WriteDataToFile();
+      // control hot water
+      VitoClient_CheckDHW();
     }
     // do time update each odd minute
     if ( (minute_now%2)==1 )  Time_ClientPing();
