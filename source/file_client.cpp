@@ -314,7 +314,7 @@ dir_t dir;
 		if ( DIR_IS_SUBDIR(&dir) ) {
 			File_BufAdd_P(PSTR(" - "));
 		} else { //if ( flags & LS_SIZE ) // print size if requested
-			sprintf(f_buf+f_ind, "%6u", dir.fileSize); f_ind += 6;
+			sprintf_P(f_buf+f_ind, PSTR("%6u"), dir.fileSize); f_ind += 6;
 		}
 		//client.print(F("</td><td>"));
 		File_BufAdd_P(PSTR("</td><td>"));
@@ -426,18 +426,18 @@ void File_SendFile(EthernetClient cl)
 /*****************************************************************************/
 uint8_t File_OpenFile(char * fname)
 {
-#if _DEBUG_>0
+#if _DEBUG_>1
 	Serial.print(F("Trying to open: ")); Serial.print(fname);
 #endif
 	sd.chdir("/");	// change dir to root
 	// listing of root entries
 	if ( file.open(fname, O_READ) ) {
-#if _DEBUG_>0
+#if _DEBUG_>1
 		Serial.println(F(" - success."));
 #endif
 		return 1;
 	} else {
-#if _DEBUG_>0
+#if _DEBUG_>1
 		Serial.println(F(" - failed!"));
 #endif
 		sd.errorPrint();
@@ -600,19 +600,23 @@ void File_GetRecordLine(int line_nr)
   File_GetFileLine(line_nr);  // the input file name is in f_buf, the read line is returned also in f_buf
 }
 /****************************************************************************/
-char * File_GetRecordedParameter(int line_nr, byte param_nr)
+char * File_GetRecordedParameter(int line_nr)
 {
-  File_GetRecordLine(line_nr);
-//Serial.print(F("Read recorded line: ")); Serial.print(f_buf);
-  if ( f_buf[0]==0 ) return 0;  // line number was not found
-  // get the parameter. parse the string into tokens delimited by commas. count the commas
-  char * ptr = strtok(f_buf, ",");
-  while ( param_nr!=0 && ptr!=0 ) {
-    ptr = strtok(NULL, ",");
-//Serial.println(ptr);
-    param_nr--;
-  }
-//Serial.print(F("Read recorded parameter: ")); Serial.println(ptr);
-  return ptr;
+	// get position of the parameter in the log line.
+	// read the first line of the reading log file
+	File_GetRecordLine(0);
+	// count the separating markers ',' in the string before the input param name
+	byte i = 1;
+	char * ptr = strtok(f_buf, ",");
+	while ( (ptr = strtok(NULL, ","))!=0 && strcmp(ptr, param_name)!=0 )	i++;
+	//Serial.println(ptr);
+	if ( ptr==0 ) return 0;
+	File_GetRecordLine(line_nr);
+	//Serial.print(F("Read recorded line: ")); Serial.print(f_buf);
+	if ( f_buf[0]==0 ) return 0;  // line number was not found
+	// get the parameter value which is the token after the counted comma
+	char * ptr1 = strtok(f_buf, ",");
+	while ( (ptr1 = strtok(NULL, ","))!=0 && --i!=0 );
+	//Serial.print(F("recorded parameter value: ")); Serial.println(ptr);
+	return ptr1;
 }
-

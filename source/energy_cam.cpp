@@ -31,6 +31,7 @@ Power Down     WO		        0x24		(write "1")
 #include <Ethernet.h>
 #include "file_client.h"
 #include "serial1.h"
+#include "vito.h"
 
 #define EC_INPUT_REG_READ_MULTIPLE	0x04
 #define EC_HOLDING_REG_READ_MULTIPLE	0x03
@@ -288,10 +289,12 @@ void EC_StoreResult(void)
   frame[5] = tmp;
   //    long temp = *(long *)&frame[3];//)*10 + frame[6];
   ocrReading.value = (*(uint32_t *)&frame[3])*10 + frame[8];
+  // load parameter name to read from record
+  strcpy_P(param_name, PSTR("Strom-H_abs"));
    // feasibility tests
    if ( ocrReading.value<256 ) {
     // read last value from the log file
-      char * ptr = File_GetRecordedParameter(-1, 8);  // last line, the 8-th parameter
+      char * ptr = File_GetRecordedParameter(-1);  // last line, the 8-th parameter
       if ( ptr>0 )
         ocrReading.value = atol(ptr);
   }
@@ -301,7 +304,7 @@ void EC_StoreResult(void)
   }
   if ( ocrReading.value0<256 ) {
     // take the first recorded value of the day from the record file as reference
-    char * ptr = File_GetRecordedParameter(1, 8);  // first line, the 8-th parameter
+    char * ptr = File_GetRecordedParameter(1);  // first line, the 8-th parameter
     if ( ptr>0 )
       ocrReading.value0 = atol(ptr);
   }

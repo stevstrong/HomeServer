@@ -12,7 +12,7 @@ void File_WriteDataToFile(void);
 void File_LoadFileLine(void);
 void File_GetFileLine(int line_nr);
 void File_GetRecordLine(int line_nr);
-char * File_GetRecordedParameter(int line_nr, byte param_nr);
+char * File_GetRecordedParameter(int line_nr);
 void File_CheckPostRequest(EthernetClient cl);
 void File_CheckDirFile(EthernetClient client);
 void File_SendFile(EthernetClient cl);
@@ -26,6 +26,7 @@ void File_NewDay(void);
 #define P_MEM      0x04
 void File_LogClient(const char * txt);
 void File_LogError(const char * txt, byte ctrl);
+void File_LogMessage(const char * txt, byte ctrl);
 #define File_Log File_LogError
 
 extern SdFile file, root;
