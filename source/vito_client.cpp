@@ -183,7 +183,7 @@ byte VitoClient_SendGet(void)
 void VitoClient_SetVitoTime(void)
 {
   // set date-time of Vito
-  File_Log(PSTR("Setting Vito date and time."), NEW_ENTRY | ADD_NL | P_MEM);
+  File_LogMessage(PSTR("Setting Vito date and time."), NEW_ENTRY | ADD_NL | P_MEM);
   signed char index = GetKeyIndex(wp_uhrzeit);
 #if _DEBUG_>0
   Serial.print(F("Setting Vito date-time parameter: ")); Serial.println(Vito_GetParamName(index));
@@ -223,7 +223,7 @@ void VitoClient_NewDay(void)
 {
 #if 0	// not needed because current not read by pulse
 	// - reset current counters of the Vito-bridge ->set new day
-  File_Log(PSTR("Setting Vito bridge date and time."), NEW_ENTRY | ADD_NL | P_MEM);
+  File_LogMessage(PSTR("Setting Vito bridge date and time."), NEW_ENTRY | ADD_NL | P_MEM);
 	// set new day for the Vito-bridge: send new date
   signed char index = GetKeyIndex(strom_datum);
 #if _DEBUG_>0
