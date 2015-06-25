@@ -50,7 +50,7 @@ char * VitoClient_GetParameterValue(char * paramName)
 void VitoClient_CheckDHW(void)
 {
 	// check week-day and time
-	if ( weekday()<5 && hour()>4 && hour()<5 )
+	if ( weekday()>1 && weekday()<7 && hour()==4 )   // weekday 1 is Sunday
 	{
 		Serial.println(F("checking hw ... "));
 		//  get the hw temp value from last readings
@@ -109,7 +109,7 @@ byte Vito_ResetPoll(void)
 		// wait for answer 06
 		ret = VitoClient_GetReply(1);
 	}
-	if ( ret==0 ) {	// error occured
+	if ( ret==0 ) {	// error occurred
 		WDG_RST;
 #if _DEBUG_>0
 		Serial.println(F("ERROR: Vito_ResetPoll: polling could not be stopped!"));

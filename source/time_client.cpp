@@ -38,14 +38,14 @@ void ParseHTML(void);
 
 /****************************************************************************/
 /****************************************************************************/
-void Time_ClientInit(void)
+void TimeClient_Init(void)
 {
   counter = 0;
 //  next_time = 20000;  // next check intervall for getting time, will be adjusted dynamically
 //  time_char = 0;
   // get the time as early as possible
   while (1) {
-    Time_ClientPing();
+    TimeClient_Ping();
     if  ( timeStatus()!=timeNotSet ) break;
     if ( (++counter)>=30 ) while (1);  // watchdog reset
     delay(1000);
@@ -306,7 +306,7 @@ typedef union {
 #endif
 /****************************************************************************/
 /****************************************************************************/
-void Time_ClientUpdateFileString(void)
+void TimeClient_UpdateFileString(void)
 {
     time_t t = now(); // store the current time in time variable t
     sprintf_P(time_str, PSTR("%02i:%02i:%02i"), hour(t), minute(t), second(t));
@@ -318,14 +318,14 @@ void Time_ClientUpdateFileString(void)
 }
 /****************************************************************************/
 /****************************************************************************/
-void Time_ClientPing(void)
+void TimeClient_Ping(void)
 {
 #ifdef TIME_SERVER_UDP
   Time_CheckUDP();
 #elif defined TIME_SERVER_TCP
   Time_CheckTCP();
 #endif
-  Time_ClientUpdateFileString();
+  TimeClient_UpdateFileString();
 }
 /****************************************************************************/
 /****************************************************************************/
@@ -333,5 +333,3 @@ byte Time_NewDay(void)
 {
   return File_CheckMissingRecordFile();
 }
-
-

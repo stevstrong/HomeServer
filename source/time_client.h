@@ -5,14 +5,14 @@
 #include <Ethernet.h>
 #include <EthernetUdp.h>
 
-void Time_ClientInit(void);
+void TimeClient_Init(void);
 //int ConnectToTimeServer(void);
-void Time_ClientPing(void);
+void TimeClient_Ping(void);
+void TimeClient_UpdateFileString(void);
 //byte Time_ClientCheck(void);
 void Time_ProcessData(EthernetClient client, char chr);
 void Time_ParseData(char chr);
 int Time_GetSecond(void);
-void Time_ClientUpdateFileString(void);
 byte Time_NewDay(void);
 
 // variables
@@ -25,5 +25,3 @@ extern char file_str[13]; // 12 chars + ending 0
 
 
 #endif
-
-

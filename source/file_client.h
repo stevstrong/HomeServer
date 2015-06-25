@@ -5,8 +5,8 @@
 #include <Ethernet.h>
 #include <SdFat.h>
 
-void File_ClientCheck(void);
-void File_ClientInit(int chip_select_pin);
+void FileClient_Check(void);
+void FileClient_Init(int chip_select_pin);
 //void File_PrintFile(void);
 void File_WriteDataToFile(void);
 void File_LoadFileLine(void);

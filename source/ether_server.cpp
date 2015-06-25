@@ -19,21 +19,21 @@ uint32_t oldip;
 byte allow;
 long accessTimeout;
 
-void Ether_ServerProcessData(EthernetClient cl);
+void EtherServer_ProcessData(EthernetClient cl);
 /*****************************************************************************/
 /*****************************************************************************/
-void Ether_ServerInit(void)
+void EtherServer_Init(void)
 {
 #if _DEBUG_>0
-  Serial.print(F("Initializing Ethernet server..."));
+	Serial.print(F("Initializing Ethernet server..."));
 #endif
 
-  my_server.begin();
-  s_ind = 0;
-  allow = 0;
-  *(uint32_t*)remoteip = 0;
-  oldip = 1;
-  accessTimeout = millis();
+	my_server.begin();
+	s_ind = 0;
+	allow = 0;
+	*(uint32_t*)remoteip = 0;
+	oldip = 1;
+	accessTimeout = millis();
 
 #if _DEBUG_>0
   Serial.println(F("done."));
@@ -41,93 +41,94 @@ void Ether_ServerInit(void)
 }
 /*****************************************************************************/
 /*****************************************************************************/
-void Ether_ServerReceiveData(EthernetClient cli)
+void EtherServer_ReceiveData(EthernetClient cli)
 {
 #if _DEBUG_>1
    Serial.print(F("ether server received: "));
 #endif
-  char c;
-  s_ind = 0;
-    // read and store the first header line only
-    while ( cli.available() && s_ind<SERVER_BUFFER_MAX_SIZE )
-    {
+   char c;
+	byte eol = 0;
+   s_ind = 0;
+   // read and store the first header line only
+   while ( cli.available() )
+   {
       c = cli.read();
 #if _DEBUG_>1
-//      if ( s_line>0 )  Serial.write(c);
+//    if ( s_line>0 )  Serial.write(c);
 #endif
-      if ( c=='\r' )   continue;  // don´t store CR, take next char
-      if ( c=='\n' )   break;  // stop storing data
-      s_buf[s_ind++] = c;
-    }
-    // only store limited number of chars, the rest will be ignored.
-    if ( s_ind>=SERVER_BUFFER_MAX_SIZE )  s_ind = SERVER_BUFFER_MAX_SIZE-1;
-    s_buf[s_ind] = 0;  // mark end of the received string
-  // read here the rest of data
-  while ( cli.available() )
-      c = cli.read();
+	// don't store CR, store only first header line, and avoid buffer overflow      
+		if ( eol==1 || c=='\r' || s_ind>=(SERVER_BUFFER_MAX_SIZE-1) )	continue;
+
+      if ( c=='\n' ) {
+			c = 0;  // mark end of the received string
+			eol = 1;
+		}
+      s_buf[s_ind++] = c;	// store here the data
+   }
+
 #if _DEBUG_>0
-    Serial.println(s_buf);
+   Serial.println(s_buf);
 #endif
 }
 /*****************************************************************************/
 /*****************************************************************************/
-void Ether_ServerCheckForClient(void)
+void EtherServer_CheckForClient(void)
 {
-  // listen for incoming clients
-  EthernetClient s_client = my_server.available();
-  if ( !s_client)  return;
+	// listen for incoming clients
+	EthernetClient s_client = my_server.available();
+	if ( !s_client)  return;
 
-  Time_ClientUpdateFileString();  // update date and time
+	TimeClient_UpdateFileString();  // update date and time
 
-  s_client.getRemoteIP(remoteip);
+	s_client.getRemoteIP(remoteip);
 #if _DEBUG_>0
-  Serial.print(F("---> request from: "));
+	Serial.print(F("---> request from: "));
 	for (byte bcount=0; bcount < 4; bcount++)
 	{
 		Serial.print(remoteip[bcount], DEC);
 		if (bcount<3) Serial.print(".");
 	}
-  Serial.println();
+	Serial.println();
 #endif
-  // security check remote IP. search for the same ip in the local record (clients.txt)
-  if ( oldip == *(uint32_t*)remoteip ) {
-    // client is same as previous one
-    if ( allow )  accessTimeout = millis() + 5*60*1000;  // renew timeout if it is registered IP
-  } else {
-    // new client. check if it is already recorded
-    byte i=0,found=0;
-    for (; i<100; i++) {
-      strcpy_P(s_buf, PSTR("clients.txt"));
-      File_GetFileLine(i);  // the input file name is in f_buf, the read line is returned also in f_buf
-      if ( s_buf[0]==0 ) break;
-      // the line is in s_buf. parse the Ip address
-      char * chrPtr = strtok(s_buf, " ");
-      chrPtr = strtok(NULL, " .");
-      if ( remoteip[0]==atoi(strtok(NULL, " .")) && remoteip[1]==atoi(strtok(NULL, ".")) && remoteip[2]==atoi(strtok(NULL, ".")) && remoteip[3]==atoi(strtok(NULL, ".")) ) {
-       Serial.print(F("client has index ")); Serial.println(i);
-       found = 1;
-       break;
-      }
-    }
-    if ( found==0 ) {
-      Serial.print(F("recording new client: "));
-      sprintf_P(s_buf, PSTR("%u\.%u\.%u\.%u"), remoteip[0], remoteip[1], remoteip[2], remoteip[3]);
-      Serial.println(s_buf);
-      File_LogClient(s_buf);
-    }
-    // update old ip
-    oldip = *(uint32_t*)remoteip;
-  }
+	// security check remote IP. search for the same ip in the local record (clients.txt)
+	if ( oldip == *(uint32_t*)remoteip ) {
+		// client is same as previous one
+		if ( allow )  accessTimeout = millis() + 5*60*1000;  // renew time-out if it is registered IP
+	} else {
+		// new client. check if it is already recorded
+		byte i=0,found=0;
+		for (; i<100; i++) {
+			strcpy_P(s_buf, PSTR("clients.txt"));
+			File_GetFileLine(i);  // the input file name is in f_buf, the read line is returned also in f_buf
+			if ( s_buf[0]==0 ) break;
+			// the line is in s_buf. parse the IP address
+			char * chrPtr = strtok(s_buf, " ");
+			chrPtr = strtok(NULL, " .");
+			if ( remoteip[0]==atoi(strtok(NULL, " .")) && remoteip[1]==atoi(strtok(NULL, ".")) && remoteip[2]==atoi(strtok(NULL, ".")) && remoteip[3]==atoi(strtok(NULL, ".")) ) {
+				Serial.print(F("client has index ")); Serial.println(i);
+				found = 1;
+				break;
+			}
+		}
+		if ( found==0 ) {
+			Serial.print(F("recording new client: "));
+			sprintf_P(s_buf, PSTR("%u\.%u\.%u\.%u"), remoteip[0], remoteip[1], remoteip[2], remoteip[3]);
+			Serial.println(s_buf);
+			File_LogClient(s_buf);
+		}
+		// update old ip
+		oldip = *(uint32_t*)remoteip;
+	}
 
-  if ( s_client.available() ) {
-    // read client request, store it into the s_buf and process it
-    Ether_ServerReceiveData(s_client);
-    Ether_ServerProcessData(s_client);
-  }
+	if ( s_client.available() ) {
+		// read client request, store it into the s_buf and process it
+		EtherServer_ReceiveData(s_client);
+		EtherServer_ProcessData(s_client);
+	}
 #if _DEBUG_>0
-  Serial.println(F("<--- client end."));
+	Serial.println(F("<--- client end."));
 #endif
-  s_client.stop();
+	s_client.stop();
 }
 /***********************************************************************************/
 void putdecimal(word w, char * s, byte digs)
@@ -167,7 +168,7 @@ void Ether_PrintStandardHeader(EthernetClient cl)
 }
 /***********************************************************************************/
 /***********************************************************************************/
-void Ether_ServerProcessData(EthernetClient cl)
+void EtherServer_ProcessData(EthernetClient cl)
 {
 	uint32_t time0 = millis();
 	if ( strncmp_P(s_buf, PSTR("GET /"), 5)==0 )

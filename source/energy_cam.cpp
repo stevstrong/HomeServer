@@ -410,7 +410,8 @@ void CalculateCRC(uint8_t bufferSize)
 {
 	uint16_t crc;
 	crc = 0xFFFF;
-	for (byte i = 0; i < bufferSize; i++) {
+   byte i;
+	for (i = 0; i < bufferSize; i++) {
 		crc ^= frame[i];
 		for (uint8_t j = 0; j < 8; j++)
 		{

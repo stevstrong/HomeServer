@@ -6,8 +6,8 @@
 extern char s_buf[SERVER_BUFFER_MAX_SIZE];
 extern byte s_ind;
 
-void Ether_ServerCheckForClient(void);
-void Ether_ServerInit(void);
+void EtherServer_CheckForClient(void);
+void EtherServer_Init(void);
 void Ether_BufInit(void);
 void Ether_BufAdd_P(const char * str);
 void Ether_BufAddChar(char chr);

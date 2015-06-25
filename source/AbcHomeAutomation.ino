@@ -35,9 +35,9 @@ void setup()
 #endif
 	Ethernet_Init();
 	WDG_Init();
-	Ether_ServerInit();
-	Time_ClientInit();
-	File_ClientInit(CS_SD_CARD);
+	EtherServer_Init();
+	TimeClient_Init();
+	FileClient_Init(CS_SD_CARD);
 	UART1_Init();
 	VitoClient_Init();
 	EC_Init();
@@ -132,7 +132,7 @@ void loop()
 		// get the new byte:
 		char inChar = Serial.read();
 		//if (inChar == 'f')    File_PrintFile();  // display file content
-		if (inChar == 't')	Time_ClientUpdateFileString();  // update date and time strings
+		if (inChar == 't')	TimeClient_UpdateFileString();  // update date and time strings
 		//if (inChar == 'n')    Vito_ClientNewDay();
 		//if (inChar == 'v')    Vito_ClientSetVitoTime();
 	}
@@ -140,7 +140,7 @@ void loop()
 	// execute next functions only once in each minute
 	if ( minute_now!=minute_old )
 	{
-		Time_ClientUpdateFileString();  // update date and time
+		TimeClient_UpdateFileString();  // update date and time
 		// new day events
 		if ( Time_NewDay() ) {
 			File_NewDay();
@@ -156,10 +156,10 @@ void loop()
 			VitoClient_CheckDHW();
 		}
 		// do time update each odd minute
-		if ( (minute_now%2)==1 )  Time_ClientPing();
+		if ( (minute_now%2)==1 )  TimeClient_Ping();
 	}
 	// do here server client tasks, listen to requests and send reply
-	Ether_ServerCheckForClient();
+	EtherServer_CheckForClient();
 
 	minute_old = minute_now;
 	delay(20);

@@ -77,7 +77,7 @@ time_t t = now();
 }
 /*****************************************************************************/
 /*****************************************************************************/
-void File_ClientInit(int CS)
+void FileClient_Init(int CS)
 {
 #if _DEBUG_>0
   Serial.print(F("Initializing SD-card..."));
@@ -232,7 +232,7 @@ DDRA = _BV(DDA0);  // set PA0 to output
 // start of critical time intervall - no power down allowed during SD writing !!!
 asm("sbi 0x1b, 0");  // set LED on - PA0
 delay(1000);  // wait 1 second before writing to warn user
-  Time_ClientUpdateFileString();  // update file string
+  TimeClient_UpdateFileString();  // update file string
 #if _DEBUG_>0
   Serial.print(F("opening file to write..."));
 #endif
