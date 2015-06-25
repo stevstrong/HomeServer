@@ -50,7 +50,7 @@ char * VitoClient_GetParameterValue(char * paramName)
 void VitoClient_CheckDHW(void)
 {
 	// check week-day and time
-	if ( weekday()>1 && weekday()<7 && hour()==4 )   // weekday 1 is Sunday
+	if ( weekday()>1 && weekday()<7 && hour()==4 && minute()>30 )   // weekday 1 is Sunday
 	{
 		Serial.println(F("checking hw ... "));
 		//  get the hw temp value from last readings
