@@ -262,7 +262,7 @@ byte Parse2Bytes(void)
 		*cPtr++ = '-'; // print '-' sign
 	}
 	if ( vito_param.divid==10 )
-		sprintf_P(cPtr, PSTR("%1u.%1u"), x/10, x%10);
+		sprintf_P(cPtr, PSTR("%01u.%1u"), x/10, x%10);
 	else
 		sprintf_P(cPtr, PSTR("%02u"), x);
 	//  Serial.println(F("parsed word: ")); Serial.println((char*)rec_frame);
@@ -279,7 +279,7 @@ uint8_t Parse4Bytes(void)
 		*cPtr++ = '-';
 	}
 	if ( vito_param.divid==10 )
-		sprintf_P(cPtr, PSTR("%1lu.%1u"), x/10, x%10);
+		sprintf_P(cPtr, PSTR("%01lu.%1u"), x/10, x%10);
 	else
 		sprintf_P(cPtr, PSTR("%02lu"), x);
 	//  Serial.println(F("parsed long: ")); Serial.println((char*)rec_frame);
