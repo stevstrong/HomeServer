@@ -38,7 +38,7 @@ void File_LogError(const char * txt, byte ctrl)
 /*****************************************************************************/
 void File_LogMessage(const char * txt, byte ctrl)
 {
-  if ( !file.open("LOG.TXT", O_RDWR | O_CREAT ) ) return;
+  if ( !file.open("LOG.TXT", O_RDWR | O_CREAT | O_TRUNC) ) return;
   if ( ctrl&NEW_ENTRY )  { file.print(date_str); file.write(' '); file.print(time_str); file.print(": "); }
   if ( ctrl&P_MEM ) file.write_P(txt);
   else         file.print(txt);

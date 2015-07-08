@@ -256,17 +256,15 @@ byte Vito_ParseRecData(void)
 byte Parse2Bytes(void)
 {	// data is in little-endian format
 	#define x ( *(int16_t*)(rec_frame+7) )
+	char * cPtr = (char*)rec_frame;
 	if ( x&0x8000 ) { // sign bit
 		x = ~x + 1;	// two's complement on bit level == signed -> unsigned
-		if ( vito_param.divid==10 )
-			sprintf_P((char*)rec_frame, PSTR("-%01u.%1u"), x/10, x%10);
-		else
-			sprintf_P((char*)rec_frame, PSTR("-%01u"), x);
-	} else
-		if ( vito_param.divid==10 )
-			sprintf_P((char*)rec_frame, PSTR("%02u.%1u"), x/10, x%10);
-		else
-			sprintf_P((char*)rec_frame, PSTR("%02u"), x);
+		*cPtr++ = '-'; // print '-' sign
+	}
+	if ( vito_param.divid==10 )
+		sprintf_P(cPtr, PSTR("%01u.%1u"), x/10, x%10);
+	else
+		sprintf_P(cPtr, PSTR("%02u"), x);
 	//  Serial.println(F("parsed word: ")); Serial.println((char*)rec_frame);
 	return 2;
 }
@@ -281,7 +279,7 @@ uint8_t Parse4Bytes(void)
 		*cPtr++ = '-';
 	}
 	if ( vito_param.divid==10 )
-		sprintf_P(cPtr, PSTR("%02lu.%1u"), x/10, x%10);
+		sprintf_P(cPtr, PSTR("%01lu.%1u"), x/10, x%10);
 	else
 		sprintf_P(cPtr, PSTR("%02lu"), x);
 	//  Serial.println(F("parsed long: ")); Serial.println((char*)rec_frame);
