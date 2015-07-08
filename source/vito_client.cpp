@@ -13,6 +13,7 @@ EthernetClient vito_client;
 byte VitoClient_Connect(void);
 byte VitoClient_GetReply(byte chrs);
 byte VitoClient_SendGet(void);
+extern char s_buf[];
 /*****************************************************************************/
 // read a parameter value out from device
 /*****************************************************************************/
@@ -67,6 +68,8 @@ void VitoClient_CheckDHW(void)
 		char * p2 = VitoClient_ReadParameter(temp_ww_soll);	// read parameter from device
 		int hw_set = atoi(p2);
 		// do here the control
+			sprintf_P(s_buf, PSTR("Checking DHW: hw: %u, hw_set: %u, pump: %u"), hw, hw_set, pump);
+			File_LogMessage(s_buf, NEW_ENTRY | ADD_NL);
 		//	send_frame = {0x41, length, 0x00, command, adrr_high, addr_low, nr_bytes, CRC/data};	// CRC in read mode
 		//	41 07 00 02 60 00 02 f4 01 0x60
 		if ( pump>0 && hw_set>450 ) {
@@ -180,42 +183,43 @@ byte VitoClient_SendGet(void)
  	return ((ival / 10) << 4) | (ival % 10);
  }
 /*******************************************************************************/
+// set date and time of Vitocal 300-A
+/*******************************************************************************/
 void VitoClient_SetVitoTime(void)
 {
-  // set date-time of Vito
-  File_LogMessage(PSTR("Setting Vito date and time."), NEW_ENTRY | ADD_NL | P_MEM);
-  signed char index = GetKeyIndex(wp_uhrzeit);
+//  File_LogMessage(PSTR("Setting Vito date and time."), NEW_ENTRY | ADD_NL | P_MEM);
+	signed char index = GetKeyIndex(wp_uhrzeit);
 #if _DEBUG_>0
-  Serial.print(F("Setting Vito date-time parameter: ")); Serial.println(Vito_GetParamName(index));
+	Serial.print(F("Setting Vito date-time parameter: ")); Serial.println(Vito_GetParamName(index));
 #endif
-  // initialize string to send: 2015011106162558
-  send_frame[7] = byte2bcd(year()/100);
-  send_frame[8] = byte2bcd(year()%100);
-  send_frame[9] = byte2bcd(month());
-  send_frame[10] = byte2bcd(day());
-  send_frame[11] = byte2bcd((weekday()+5)%7);  // day of week
-  send_frame[12] = byte2bcd(hour());
-  send_frame[13] = byte2bcd(minute());
-  send_frame[14] = byte2bcd(second());
+	// initialize string to send: 2015011106162558
+	send_frame[7] = byte2bcd(year()/100);
+	send_frame[8] = byte2bcd(year()%100);
+	send_frame[9] = byte2bcd(month());
+	send_frame[10] = byte2bcd(day());
+	send_frame[11] = byte2bcd((weekday()+5)%7);  // day of week
+	send_frame[12] = byte2bcd(hour());
+	send_frame[13] = byte2bcd(minute());
+	send_frame[14] = byte2bcd(second());
 // build here command frame
-  Vito_BuildCommand(index, 'w');
+	Vito_BuildCommand(index, 'w');
 #if 0 //_DEBUG_>0
-  Serial.print(F("After build: "));
-  for (byte i=0; i<16; i++) {
-    byte c = send_frame[i];
-    if ( c<16 ) Serial.print(0);
-    Serial.print(c,HEX);
-  }
-  Serial.println();
-//    return;
+	Serial.print(F("After build: "));
+	for (byte i=0; i<16; i++) {
+		byte c = send_frame[i];
+		if ( c<16 ) Serial.print(0);
+		Serial.print(c,HEX);
+	}
+	Serial.println();
+//	return;
 #endif
 // send here command and get reply
-  if ( VitoClient_SendGet()==0 ) {  // get all data
+	if ( VitoClient_SendGet()==0 ) {  // get all data
 #if _DEBUG_>0
-    Serial.println(F("Set Vito date/time could not get reply!"));
+		Serial.println(F("Set Vito date/time could not get reply!"));
 #endif
-    File_LogError(PSTR("Set Vito date/time could not get reply!"), NEW_ENTRY | ADD_NL | P_MEM);
-  }
+		File_LogError(PSTR("Set Vito date/time could not get reply!"), NEW_ENTRY | ADD_NL | P_MEM);
+	}
 }
 /*****************************************************************************/
  /*****************************************************************************/
