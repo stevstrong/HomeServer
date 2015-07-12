@@ -287,12 +287,11 @@ void EC_StoreResult(void)
 		ec_new_day = 0;
 		ocrReading.value0 = ocrReading.value;
 	}
-	if ( ocrReading.value0<256 ) {
-		// take the first recorded value of the day from the record file as reference
-		char * ptr = File_GetRecordedParameter(1);  // first line, the 8-th parameter
-		if ( ptr>0 )
-			ocrReading.value0 = atol(ptr);
-	}
+	// take the first recorded value of the day from the record file as reference
+	char * ptr = File_GetRecordedParameter(1);  // first line, the 8-th parameter
+	if ( ptr>0 )
+		ocrReading.value0 = atol(ptr);
+
 	if ( ocrReading.value0<256 )
 		ocrReading.value0 = ocrReading.value;
 	// get diff
