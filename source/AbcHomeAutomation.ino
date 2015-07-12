@@ -155,8 +155,8 @@ void loop()
 			// control hot water
 			VitoClient_CheckDHW();
 		}
-		// do time update each odd minute
-		if ( (minute_now%2)==1 )  TimeClient_Ping();
+		// do time update each 5 minutes
+		if ( (minute_now%5)==0 )  TimeClient_Ping();
 	}
 	// do here server client tasks, listen to requests and send reply
 	EtherServer_CheckForClient();
