@@ -50,16 +50,17 @@ char * VitoClient_GetParameterValue(char * paramName)
 /*****************************************************************************/
 void VitoClient_CheckDHW(void)
 {
-	// check week-day and time
+//	sprintf_P(s_buf, PSTR("Checking DHW date and time: weekday: %u, hour: %u, minute: %u"), weekday(), hour(), minute());
+//	Serial.println(s_buf);
+	// check weekday and time
 	if ( weekday()>1 && weekday()<7 && hour()==4 && minute()>30 )   // weekday 1 is Sunday
 	{
-		Serial.println(F("checking hw ... "));
+		Serial.println(F("checking dhw ... "));
 		//  get the hw temp value from last readings
 		Vito_GetParamName(GetKeyIndex(temp_ww));	// load param name
 		char * p = File_GetRecordedParameter(-1);	// read last recorded value
-		int hw = 10*atoi(p);	// convert it into interger
-		if ( hw<100 ) return;	// feasibility test, hw should never get lower than 10°C
-		if ( (p=strchr(p,'.'))>0 ) hw += atoi(p); // add unary value to 10x value
+		int hw = atoi(p);	// convert it into integer
+		if ( hw<10 ) return;	// feasibility test, hw should never get lower than 10°C
 		// get last status-pumpe-ww
 		Vito_GetParamName(GetKeyIndex(status_pumpe_ww));	// load param name
 		char * p1 = File_GetRecordedParameter(-1);	// read last recorded value
@@ -68,17 +69,19 @@ void VitoClient_CheckDHW(void)
 		char * p2 = VitoClient_ReadParameter(temp_ww_soll);	// read parameter from device
 		int hw_set = atoi(p2);
 		// do here the control
-			sprintf_P(s_buf, PSTR("Checking DHW: hw: %u, hw_set: %u, pump: %u"), hw, hw_set, pump);
+/*			sprintf_P(s_buf, PSTR("Checking DHW: hw: %u, hw_set: %u, pump: %u"), hw, hw_set, pump);
+	Serial.println(s_buf);
 			File_LogMessage(s_buf, NEW_ENTRY | ADD_NL);
+return;*/
 		//	send_frame = {0x41, length, 0x00, command, adrr_high, addr_low, nr_bytes, CRC/data};	// CRC in read mode
 		//	41 07 00 02 60 00 02 f4 01 0x60
-		if ( pump>0 && hw_set>450 ) {
+		if ( pump>0 && hw_set>45 ) {
 			// set hw temp back to normal
 			Serial.println(F("set hw back to 45°C."));
 			File_LogMessage(PSTR("Vito DHW set back to 45°C."), NEW_ENTRY | ADD_NL | P_MEM); 
 			*(uint16_t*)(send_frame+7) = 450;
 			VitoClient_WriteParameter(temp_ww_soll);
-		} else if ( pump==0 && hw<400 && hw_set==450 ) {
+		} else if ( pump==0 && hw<40 && hw_set==45 ) {
 			// set hw temp to 50°C
 			Serial.println(F("set hw to 50°C."));
 			File_LogMessage(PSTR("Vito DHW set to 50°C."), NEW_ENTRY | ADD_NL | P_MEM); 
