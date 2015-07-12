@@ -25,39 +25,77 @@ SdVolume volume;
 #define PATH (s_buf+5)
 /*****************************************************************************/
 /*****************************************************************************/
+uint8_t File_OpenFile(char * fname, uint8_t oflags)
+{
+	if ( file.isOpen() )	file.close();
+#if _DEBUG_>0
+	Serial.print(F("opening file/dir: ")); Serial.print(fname);
+#endif
+	sd.chdir("/");	// change dir to root
+	// listing of root entries
+	if ( file.open(fname, oflags) ) {
+#if _DEBUG_>0
+		Serial.println(F(" - success."));
+#endif
+		return 1;
+	} else {
+#if _DEBUG_>0
+		Serial.println(F(" - failed!"));
+#endif
+		sd.errorPrint();
+		return 0;
+	}
+}
+/*****************************************************************************/
+/*****************************************************************************/
 void File_LogError(const char * txt, byte ctrl)
 {
-  if ( !file.open("ERRORS.TXT", O_RDWR | O_CREAT | O_TRUNC) ) return;
-  if ( ctrl&NEW_ENTRY )  { file.print(date_str); file.write(' '); file.print(time_str); file.print(": "); }
-  if ( ctrl&P_MEM ) file.write_P(txt);
-  else         file.print(txt);
-  if ( ctrl&ADD_NL ) file.println();
-  file.close();
+	if ( ctrl&NEW_ENTRY )
+		File_OpenFile("ERRORS.TXT", O_WRITE | O_CREAT | O_AT_END);
+	if ( !file.isOpen() ) return;
+	if ( ctrl&NEW_ENTRY ) {
+		file.print(date_str); file.write(' '); file.print(time_str); file.print(": "); }
+	if ( ctrl&P_MEM )	file.write_P(txt);
+	else					file.print(txt);
+	if ( ctrl&ADD_NL ) {
+		file.println();
+		file.close();
+		Serial.println(F("done"));
+	}
 }
 /*****************************************************************************/
 /*****************************************************************************/
 void File_LogMessage(const char * txt, byte ctrl)
 {
-  if ( !file.open("LOG.TXT", O_RDWR | O_CREAT ) ) return;
-  if ( ctrl&NEW_ENTRY )  { file.print(date_str); file.write(' '); file.print(time_str); file.print(": "); }
-  if ( ctrl&P_MEM ) file.write_P(txt);
-  else         file.print(txt);
-  if ( ctrl&ADD_NL ) file.println();
-  file.close();
+	if ( ctrl&NEW_ENTRY ) {
+		if ( ctrl&CLEAR )
+			File_OpenFile("messages.txt", O_WRITE | O_CREAT | O_TRUNC);
+		else
+			File_OpenFile("messages.txt", O_WRITE | O_CREAT | O_AT_END);
+	}
+	if ( !file.isOpen() ) return;
+	if ( ctrl&NEW_ENTRY ) {
+		file.print(date_str); file.write(' '); file.print(time_str); file.print(": "); }
+	if ( ctrl&P_MEM )	file.write_P(txt);
+	else					file.write(txt);
+	if ( ctrl&ADD_NL ) {
+		file.println();
+		file.close();
+	}
 }
 /*****************************************************************************/
 /*****************************************************************************/
 void File_LogClient(const char * txt)
 {
-  if ( !file.open("clients.txt", O_RDWR | O_CREAT | O_AT_END) ) return;
-  file.print(date_str); file.write(' '); file.print(time_str); file.print(": ");
-  file.println(txt);
-  file.close();
+	if ( !File_OpenFile("clients.txt", O_RDWR | O_CREAT | O_AT_END) ) return;
+	file.print(date_str); file.write(' '); file.print(time_str); file.print(": ");
+	file.println(txt);
+	file.close();
 }
 /****************************************************************************
 void File_LogReading(char * txt, byte ctr)
 {
-  if ( !file.open("READING.TXT", O_WRITE | O_TRUNC) ) return;
+  if ( !File_OpenFile("READING.TXT", O_WRITE | O_TRUNC) ) return;
   if ( ctrl&NEW_ENTRY )  { file.print(date_str); file.write(' '); file.print(time_str); file.print(": "); }
   if ( ctrl&P_MEM ) file.write_P(txt);
   else         file.print(txt);
@@ -80,57 +118,70 @@ time_t t = now();
 void FileClient_Init(int CS)
 {
 #if _DEBUG_>0
-  Serial.print(F("Initializing SD-card..."));
+	Serial.print(F("Initializing SD-card..."));
 #endif
-  //int ret = sd.begin(CS, SPI_FULL_SPEED);
-  if ( !sd.begin(CS, SPI_FULL_SPEED) )
-    sd.initErrorHalt_P(PSTR("failed!"));
+	//int ret = sd.begin(CS, SPI_FULL_SPEED);
+	if ( !sd.begin(CS, SPI_FULL_SPEED) )
+		sd.initErrorHalt_P(PSTR("failed!"));
 
 //  f_ind = 0;
-  volume = *sd.vol();
+	volume = *sd.vol();
 #if _DEBUG_>0
-  Serial.println(F("done."));
-  Serial.print(F("Volume is FAT"));
-  Serial.println(volume.fatType(),DEC);
+	Serial.println(F("done."));
+	Serial.print(F("Volume is FAT"));
+	Serial.println(volume.fatType(),DEC);
 #endif
-  if ( !file.openRoot(&volume) )  // open root
-    sd.initErrorHalt_P(PSTR("failed!"));
+	if ( !file.openRoot(&volume) )  // open root
+		sd.initErrorHalt_P(PSTR("failed!"));
 #if _DEBUG_>0
 //  Serial.println(F("Root:"));
 /*
 DO NOT ENABLE the following line, as it causes system reset by printing out the file tree !!!
-  root.ls(LS_DATE | LS_SIZE | LS_R);	// print here the file list
-  Serial.println(F("-----------end_root------------"));
 */
-  //Serial.println(); 
+	file.ls(LS_DATE | LS_SIZE);// | LS_R);	// print here the file list
+	Serial.println(F("-----------end_root------------"));
 #endif
-  file.close();
-  // set date time callback function
-  SdFile::dateTimeCallback(File_SetDateTime);
-  File_LogMessage(PSTR("System started."), NEW_ENTRY | ADD_NL | P_MEM); 
+	file.close();
+   if ( sd.exists("logs") ) {
+		File_OpenFile("logs", O_WRITE);
+      // try to remove dir
+      if ( !file.rmRfStar() ) {
+#if _DEBUG_>0
+			Serial.println(F("rmRfStar failed!"));
+      } else {
+			Serial.println(F("rmRfStar done."));
+#endif
+		}
+		file.close();
+	}
+   if ( sd.exists("messages.txt") ) {
+		File_OpenFile("messages.txt", O_WRITE);
+      // try to remove the file
+      if ( !file.remove() ) {
+#if _DEBUG_>0
+        Serial.println(F("messages.txt removal failed!"));
+      } else {
+        Serial.println(F("messages.txt removal succesful."));
+#endif
+		}
+		file.close();
+	}
+	sd.chdir("/");
+	// set date time callback function
+	SdFile::dateTimeCallback(File_SetDateTime);
+	File_LogMessage(PSTR("System started."), CLEAR | NEW_ENTRY | ADD_NL | P_MEM); 
 }
-/*****************************************************************************/
-/* example usage of LogError
-
-  if (!file.open(file_str, O_READ)) {
-    File_LogError(PSTR("Could not open file "), NEW_ENTRY | P_MEM); File_LogError(file_str, WR_NL);
-    sd.errorHalt("failed!");
-  }
-*/
 /*****************************************************************************/
 /*****************************************************************************/
 void File_TestWrittenData(char * txt)
 {
 //  char tmp[100];
 #if _DEBUG_>1
-  Serial.print(F("opening file to test..."));
+  Serial.println(F("testing written data... "));
 #endif
   // open the file for write at end like the Native SD library
-  int ret = file.open(f_buf, O_RDWR | O_AT_END);
+  int ret = File_OpenFile(f_buf, O_RDWR | O_AT_END);
   if (!ret) { sd.errorPrint("failed!"); return; }
-#if _DEBUG_>1
-  Serial.print(F("success. testing data... "));
-#endif
   //Serial.print(F("file write testing: ")); Serial.println(txt);
   signed char len = strlen(txt);
   //Serial.print(F("string lenght to be tested: ")); Serial.println(len);
@@ -190,7 +241,7 @@ uint8_t File_CheckMissingRecordFile(void)
   if ( sd.exists(f_buf) ) return 0;
   // create the new file for write.
   // this will fail if case of new month, so create the new month dir first 
-  while ( !file.open(f_buf, O_WRITE | O_CREAT | O_AT_END) ) {
+  while ( !File_OpenFile(f_buf, O_WRITE | O_CREAT | O_AT_END) ) {
     // check the existance of destination directory, create it if not available
     f_buf[15]=0;  // mark end of directory string by overwriting directory marker '/'
     if ( !sd.exists(f_buf) ) {
@@ -227,30 +278,24 @@ uint8_t File_CheckMissingRecordFile(void)
 /*****************************************************************************/
 void File_WriteDataToFile(void)
 {
-byte newf;
 DDRA = _BV(DDA0);  // set PA0 to output
 // start of critical time intervall - no power down allowed during SD writing !!!
 asm("sbi 0x1b, 0");  // set LED on - PA0
 delay(1000);  // wait 1 second before writing to warn user
+
   TimeClient_UpdateFileString();  // update file string
-#if _DEBUG_>0
-  Serial.print(F("opening file to write..."));
-#endif
 	sd.chdir("/");
 	File_GetCurrentRecordFile();  // init buffer with file name
 	// try to open recording file
-	if ( !file.open(f_buf, O_WRITE | O_AT_END) ) {
-		File_LogError(PSTR("opening log file failed!"), NEW_ENTRY | ADD_NL | P_MEM); 
-		sd.errorPrint_P(PSTR("opening log file failed!"));
+	if ( !File_OpenFile(f_buf, O_WRITE | O_AT_END) ) {
+		File_LogError(PSTR("opening record file failed!"), NEW_ENTRY | ADD_NL | P_MEM); 
+		sd.errorPrint_P(PSTR("opening record file failed!"));
 		return;
 	}
-#if _DEBUG_>0
-	Serial.print(F("success. writing to file..."));
-#endif
 	file.println(param_readings);
 	file.close();
 #if _DEBUG_>0
-	Serial.println(F("done."));
+	Serial.println(F("writing to file done."));
 #endif
 	// test if data has been correctly written.
 	File_TestWrittenData(param_readings);
@@ -424,28 +469,6 @@ void File_SendFile(EthernetClient cl)
 }
 /*****************************************************************************/
 /*****************************************************************************/
-uint8_t File_OpenFile(char * fname)
-{
-#if _DEBUG_>1
-	Serial.print(F("Trying to open: ")); Serial.print(fname);
-#endif
-	sd.chdir("/");	// change dir to root
-	// listing of root entries
-	if ( file.open(fname, O_READ) ) {
-#if _DEBUG_>1
-		Serial.println(F(" - success."));
-#endif
-		return 1;
-	} else {
-#if _DEBUG_>1
-		Serial.println(F(" - failed!"));
-#endif
-		sd.errorPrint();
-		return 0;
-	}
-}
-/*****************************************************************************/
-/*****************************************************************************/
 void File_CheckPostRequest(EthernetClient cl)
 {
 char * f_ptr;
@@ -455,7 +478,7 @@ char * f_ptr;
 #endif
 		// get the list of files of current month. prepare the directory for current month
 		sprintf_P(PATH, PSTR("records/%4u/%02u"), year(), month());
-		if ( File_OpenFile(PATH) )
+		if ( File_OpenFile(PATH, O_READ) )
 			File_SendFileList(cl);
 	} else
 	if ( ( f_ptr = strstr_P(PATH, PSTR("readfile=")) )>0 ) {  //14-12-30.TXT)
@@ -468,7 +491,7 @@ char * f_ptr;
 		f_ptr = f_buf+90;	// set new pointer
 		// prepare requested file with correct directory
 		sprintf_P(PATH, PSTR("records/20%2u/%02u/%s"), atoi(f_ptr), atoi(f_ptr+3), f_ptr);
-		if ( File_OpenFile(PATH) )
+		if ( File_OpenFile(PATH, O_READ) )
 			File_SendFile(cl);
 	}
 	file.close();
@@ -514,7 +537,7 @@ byte index = 0;
 		*(f_ptr+1) = 0;
 	}
 	// check if requested file/dir exists
-	if ( File_OpenFile(f_ptr) ) {
+	if ( File_OpenFile(f_ptr, O_READ) ) {
 		if ( file.isDir() || file.isSubDir() ) {  // root or directory?
 			File_ListDir(cl);
 		} else {
@@ -550,54 +573,50 @@ byte index = 0;
 void File_GetFileLine(int line_nr)
 {
 //  File_GetCurrentRecordFile();  // returns the file name in f_buf
-  if ( !file.open(f_buf, O_READ) ) {
+	if ( !File_OpenFile(f_buf, O_READ) ) {
+		File_LogError(PSTR("Could not open file: "), NEW_ENTRY | P_MEM);
+		File_LogError(f_buf, ADD_NL);
+		f_buf[0] = 0;
+		return;
+	}
+	// file opened successfully
+	memset(f_buf, sizeof(f_buf), 0);  // init read buffer
+	int line = 0;
+	if ( line_nr>=0 ) {	// read from the beginning
+		file.rewind();  // set to position zero
+	} else {  // read last stored line, from the end
 #if _DEBUG_>0
-      Serial.print(F("Could not open file: "));
-      Serial.println(f_buf);
+//	Serial.println(F("requested last line..."));
 #endif
-      File_LogError(PSTR("Could not open file: "), NEW_ENTRY | P_MEM);
-      File_LogError(f_buf, ADD_NL);
-      f_buf[0] = 0;
-      return;
-    }
-  // file opened successfully
-  memset(f_buf, sizeof(f_buf), 0);  // init read buffer
-  int line = 0;
-  if ( line_nr>=0 ) {	// read from the beginning
-    file.rewind();  // set to position zero
-  } else {  // read last stored line, from the end
-#if _DEBUG_>0
-      Serial.println(F("requested last line..."));
-#endif
-    file.seekEnd();  // set to end of file
-    // trim right file to read back
-    while ( file.seekCur(-1) && (char)(file.peek())<' ' );
-    // find next end of line
-    while ( file.seekCur(-1) && (char)(file.peek())>=' ' );
-    file.seekCur(+1); // go to the next valid char
-    //Serial.print(F("read chars: "));
-    line = line_nr;	// read only one line, the last one
-  }
-  // read characters untill end of line reached:
-  while ( 1 ) {
-    int fg = file.fgets(f_buf, sizeof(f_buf)-1);
+		file.seekEnd();  // set to end of file
+		// trim right file to read back
+		while ( file.seekCur(-1) && (char)(file.peek())<' ' );
+		// find next end of line
+		while ( file.seekCur(-1) && (char)(file.peek())>=' ' );
+		file.seekCur(+1); // go to the next valid char
+		//Serial.print(F("read chars: "));
+		line = line_nr;	// read only one line, the last one
+	}
+	// read characters untill end of line reached:
+	while ( 1 ) {
+		int fg = file.fgets(f_buf, sizeof(f_buf)-1);
 //    Serial.println(fg);
-    if ( fg<=0 ) {
-      f_buf[0] = 0;
-      break;  // we are done
-    }
-    if ( line == line_nr ) break;  // we are done
-    f_buf[0] = 0;	// mark invalid string
-    line ++;
-  }
-  file.close();
-  // the buffer is ready to be read
+		if ( fg<=0 ) {
+			f_buf[0] = 0;
+			break;  // we are done
+		}
+		if ( line == line_nr ) break;  // we are done
+		f_buf[0] = 0;	// mark invalid string
+		line ++;
+	}
+	file.close();
+	// the buffer is ready to be read
 }
 /****************************************************************************/
 void File_GetRecordLine(int line_nr)
 {
-  File_GetCurrentRecordFile();  // current log file name is stored in f_buf
-  File_GetFileLine(line_nr);  // the input file name is in f_buf, the read line is returned also in f_buf
+	File_GetCurrentRecordFile();  // current log file name is stored in f_buf
+	File_GetFileLine(line_nr);  // the input file name is in f_buf, the read line is returned also in f_buf
 }
 /****************************************************************************/
 char * File_GetRecordedParameter(int line_nr)

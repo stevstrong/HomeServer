@@ -24,12 +24,13 @@ void File_NewDay(void);
 #define NEW_ENTRY  0x01
 #define ADD_NL     0x02
 #define P_MEM      0x04
+#define CLEAR      0x08
 void File_LogClient(const char * txt);
 void File_LogError(const char * txt, byte ctrl);
 void File_LogMessage(const char * txt, byte ctrl);
 #define File_Log File_LogError
 
-extern SdFile file, root;
+extern SdFile file;
 
 
 #endif
