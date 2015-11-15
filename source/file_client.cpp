@@ -12,11 +12,6 @@ SdFile file;
 
 Sd2Card card;
 SdVolume volume;
-//SdFile root;
-
-//#define FILE_BUFFER_MAX_SIZE
-//char f_buf[FILE_BUFFER_MAX_SIZE];
-//byte f_ind;
 
 //extern char s_buf[SERVER_BUFFER_MAX_SIZE];
 //extern byte s_ind;
@@ -28,18 +23,18 @@ SdVolume volume;
 uint8_t File_OpenFile(char * fname, uint8_t oflags)
 {
 	if ( file.isOpen() )	file.close();
-#if _DEBUG_>0
+#if _DEBUG_>1
 	Serial.print(F("opening file/dir: ")); Serial.print(fname);
 #endif
 	sd.chdir("/");	// change dir to root
 	// listing of root entries
 	if ( file.open(fname, oflags) ) {
-#if _DEBUG_>0
+#if _DEBUG_>1
 		Serial.println(F(" - success."));
 #endif
 		return 1;
 	} else {
-#if _DEBUG_>0
+#if _DEBUG_>1
 		Serial.println(F(" - failed!"));
 #endif
 		sd.errorPrint();
@@ -68,9 +63,6 @@ void File_LogError(const char * txt, byte ctrl)
 void File_LogMessage(const char * txt, byte ctrl)
 {
 	if ( ctrl&NEW_ENTRY ) {
-		if ( ctrl&CLEAR )
-			File_OpenFile("messages.txt", O_WRITE | O_CREAT | O_TRUNC);
-		else
 			File_OpenFile("messages.txt", O_WRITE | O_CREAT | O_AT_END);
 	}
 	if ( !file.isOpen() ) return;
@@ -154,22 +146,11 @@ DO NOT ENABLE the following line, as it causes system reset by printing out the 
 		}
 		file.close();
 	}
-   if ( sd.exists("messages.txt") ) {
-		File_OpenFile("messages.txt", O_WRITE);
-      // try to remove the file
-      if ( !file.remove() ) {
-#if _DEBUG_>0
-        Serial.println(F("messages.txt removal failed!"));
-      } else {
-        Serial.println(F("messages.txt removal succesful."));
-#endif
-		}
-		file.close();
-	}
+
 	sd.chdir("/");
 	// set date time callback function
 	SdFile::dateTimeCallback(File_SetDateTime);
-	File_LogMessage(PSTR("System started."), CLEAR | NEW_ENTRY | ADD_NL | P_MEM); 
+	File_LogMessage(PSTR("System started."), NEW_ENTRY | ADD_NL | P_MEM); // no CLEAR | 
 }
 /*****************************************************************************/
 /*****************************************************************************/

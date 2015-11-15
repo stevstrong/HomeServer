@@ -50,8 +50,6 @@ char * VitoClient_GetParameterValue(char * paramName)
 /*****************************************************************************/
 void VitoClient_CheckDHW(void)
 {
-//	sprintf_P(s_buf, PSTR("Checking DHW date and time: weekday: %u, hour: %u, minute: %u"), weekday(), hour(), minute());
-//	Serial.println(s_buf);
 	// check weekday and time
 	if ( weekday()>1 && weekday()<7 && hour()==4 && minute()>30 )   // weekday 1 is Sunday
 	{
@@ -69,10 +67,6 @@ void VitoClient_CheckDHW(void)
 		char * p2 = VitoClient_ReadParameter(temp_ww_soll);	// read parameter from device
 		int hw_set = atoi(p2);
 		// do here the control
-/*			sprintf_P(s_buf, PSTR("Checking DHW: hw: %u, hw_set: %u, pump: %u"), hw, hw_set, pump);
-	Serial.println(s_buf);
-			File_LogMessage(s_buf, NEW_ENTRY | ADD_NL);
-return;*/
 		//	send_frame = {0x41, length, 0x00, command, adrr_high, addr_low, nr_bytes, CRC/data};	// CRC in read mode
 		//	41 07 00 02 60 00 02 f4 01 0x60
 		if ( pump>0 && hw_set>45 ) {
