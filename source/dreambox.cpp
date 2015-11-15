@@ -13,17 +13,18 @@
 
 //#define DM800SE	0
 //#define DM800		1
+
 typedef enum { DM800SE, DM800 } dm_device_t;
-dm_device_t dm_device;
+static dm_device_t dm_device;
 typedef enum { DM_OK, DM_STANDBY, CONNECTION_TIMEOUT } dm_state_t;
-dm_state_t dm_state[2];
+static dm_state_t dm_state[2];
 typedef enum { CMD_TIMER_LIST, CMD_TIMER_CLEANUP, CMD_GET_STATUS} dm_cmd_t;
-dm_cmd_t dm_cmd;
+static dm_cmd_t dm_cmd;
 // Initialize the Ethernet client library with the IP address and port of the server
 // that you want to connect to (port 23 is default for telnet);
-EthernetClient dm_client;
-byte dm_ip[2];
-int dm_port = 80;
+static EthernetClient dm_client;
+static byte dm_ip[2];
+static int dm_port = 80;
 //
 typedef enum {
 	START = 1,
