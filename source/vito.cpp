@@ -166,7 +166,7 @@ byte Vito_ReceiveData(byte char0)
 //	static char char0;
 	if ( ind==VITO_REC_START )	// is first byte?
 	{	// check if the first byte is 06
-		if ( char0==0x06 ) {	// only next byte should be stored
+		if ( char0==0x06 || char0==0xE0 ) {	// only next byte should be stored
 			return 0;		// get next byte
 		}
 		else if ( char0!=0x41 ) {

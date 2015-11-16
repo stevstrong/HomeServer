@@ -149,7 +149,7 @@ byte ret = 0;
 		while ( vito_client.available() ) {
 			byte rd = vito_client.read();
 			if ( ret==0 ) {
-				if ( chrs==1 && rd==0x06 )
+				if ( chrs==1 && (rd==0x06 || rd==0xE0) ) // workaround sometimes wrong first byte
 					ret = 1;
 				else
 					ret = Vito_ReceiveData(rd); // process only if not yet received all bytes
@@ -164,7 +164,7 @@ byte ret = 0;
 /*****************************************************************************/
 byte VitoClient_SendGet(void)
 {
-	byte retry = 1;
+	byte retry = 2;
 	while ( (retry--)>0 ) {
 		// connect to Vito
 		if ( VitoClient_Check()==0 ) continue;  // don't go on if there is no connection
@@ -173,6 +173,7 @@ byte VitoClient_SendGet(void)
 		// wait for reply
 		return VitoClient_GetReply(0);
 	}
+	return 0;	// retries exhausted, return error
 }
 /*******************************************************************************/
  static byte byte2bcd(byte ival)
