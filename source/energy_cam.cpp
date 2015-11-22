@@ -29,9 +29,10 @@ Start OCR      WO					0x21		(write "1")
 Power Down     WO					0x24		(write "1")
 ******************************************************************************/
 #include "energy_cam.h"
-#include <Ethernet.h>
+#ifndef USE_RS485
+ #include <Ethernet.h>
+#endif
 #include "file_client.h"
-#include "serial1.h"
 #include "vito.h"
 
 #define EC_INPUT_REG_READ_MULTIPLE		0x04
@@ -39,7 +40,7 @@ Power Down     WO					0x24		(write "1")
 #define EC_HOLDING_REG_WRITE_SINGLE		0x06
 #define EC_HOLDING_REG_WRITE_MULTIPLE	0x10
 
-#define	EC_STATUS_ACTION_ONGOING	2
+//#define	EC_STATUS_ACTION_ONGOING	0xFFFD
 #define	EC_RESULT_OCR_OK1	1
 #define	EC_RESULT_OCR_OK3	3
 
@@ -49,7 +50,7 @@ typedef struct {
 	uint8_t diff;    // relative value compared to the first reading of the day
 } ocrReading_t;
 
-ocrReading_t ocrReading;
+static ocrReading_t ocrReading;
 
 // EnergyCam state machine states
 typedef enum { EC_OK, CONNECTION_TIMEOUT, MODBUS_ERROR, OCR_TIMEOUT } ec_state_t;
@@ -81,15 +82,15 @@ enum { EC_FRAME_READ_STATUS_REG, EC_FRAME_START_OCR, EC_FRAME_READ_OCR_STATUS, E
 // frame[] is used to receive and transmit packages. 
 // The maximum number of bytes in a modbus packet is 256 bytes
 // This is limited to the serial buffer of 64 bytes
-uint8_t frame[BUFFER_SIZE]; 
-uint8_t buffer;
-uint32_t timeout; // timeout interval
-uint32_t startDelay; // init variable for frame and timeout delay
+static uint8_t frame[BUFFER_SIZE]; 
+static uint8_t buffer;
+static uint32_t timeout; // timeout interval
+static uint32_t startDelay; // init variable for frame and timeout delay
 // Modbus states that a baud rate higher than 19200 must use a fixed 750 us 
 // for inter character time out and 1.75 ms for a frame delay	
-#define t1_5   750 // inter character time out in microseconds
-#define t3_5  1750 // inter frame time out in microseconds
-byte ec_new_day;
+#define T1_5   750 // inter character time out in microseconds
+#define T3_5  1750 // inter frame time out in microseconds
+static byte ec_new_day;
 
 ////////// Function definitions //////////
 //void idle(void);
@@ -103,15 +104,13 @@ void ProcessSuccess(void);
 void CalculateCRC(unsigned char bufferSize);
 void SendFrame(unsigned char fr_nr);
 
-// change these defines to IO switch when RS485 installed !!!
-#define ACTIVATE_TX_PIN		asm("nop")
-#define DEACTIVATE_TX_PIN	asm("nop")
-#define ACTIVATE_RX_PIN		asm("nop")
-#define DEACTIVATE_RX_PIN	asm("nop")
-
+#ifdef USE_RS485
+	#define ec_client	Serial1
+#else
 // Initialize the Ethernet client library with the IP address and port of the server
 // that you want to connect to (port 23 is default for telnet);
 EthernetClient ec_client;
+#endif
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -122,6 +121,15 @@ void EC_NewDay(void)
 /*****************************************************************************/
 void EC_Connect(void)
 {
+#ifdef USE_RS485
+ #if _DEBUG_>0
+	Serial.println(F("Connected to EnergyCam via RS485."));
+ #endif
+	RS485_ENABLE_TX;
+	ec_state = EC_OK;
+#else
+
+#define EC_CONNECT_TIMEOUT	5000	// millis
 	int reply;
 	byte ec_ip[] = {192,168,100,48};
 	int ec_port = 8088;
@@ -130,9 +138,9 @@ void EC_Connect(void)
 	Serial.print(F("Connecting to EnergyCam ... "));
 #endif
 	// if you get a connection, report back via serial:
-	timeout = millis()+5000;  // time within to get reply
+	timeout = millis();  // time within to get reply
 	while (1) {
-		if ( millis()>timeout ) {  // if no answer received within the prescribed time
+		if ( (millis()-timeout)>EC_CONNECT_TIMEOUT ) {  // if no answer received within the prescribed time
 			//time_client.stop();
 #if _DEBUG_>0
 			Serial.print(F("timed out..."));
@@ -162,6 +170,8 @@ void EC_Connect(void)
 #endif
 		ec_state = EC_OK;
 	}
+	
+#endif	// #ifdef USE_RS485
 }
 /*****************************************************************************/
 void Modbus_Init(void)
@@ -172,13 +182,18 @@ void Modbus_Init(void)
 /*****************************************************************************/
 void EC_Init(void)
 {
+#ifdef USE_RS485
+	Serial1.begin(115200);
+	RS485_SET_DIR_TO_OUTPUT;
+	RS485_ENABLE_TX;
+#endif
 	Modbus_Init();
 	ec_state = EC_OK;
 	ec_new_day = 0;
 	ocrReading.value0 = 0;
 	ocrReading.value = 0;
 	ocrReading.diff = 0;
-	startDelay = millis()+2;
+	startDelay = millis();
 }
 /*****************************************************************************/
 void SendFrame(uint8_t fr_nr)
@@ -186,40 +201,38 @@ void SendFrame(uint8_t fr_nr)
 	// init frame to send
 	memcpy_P(&frame[0], &ec_frames[fr_nr], sizeof(modbus_head_t));
 	CalculateCRC(6);  // add crc bytes to the end of frame starting form byte position 6
-#if _DEBUG_>0
-//    Serial.print(F("Sending EnergyCam frame: "));
+#if _DEBUG_>1
+	Serial.print(F("Sending EnergyCam frame:"));
+	for (byte i=0; i<8; i++) {
+		Serial.print(' ');
+		byte tmp = frame[i];
+		if ( tmp<16 ) Serial.print(0);
+		Serial.print(tmp, HEX);
+	}
+	Serial.println();
 #endif
-	while ( startDelay>millis() ) WDG_RST;	// wait for frame delay
+	while ( (millis()-startDelay)<2 ) WDG_RST;	// wait for frame delay
 	// prepare to send
-	UART1_Flush();
-	UART1_ENABLE_TX;
+#ifdef USE_RS485
 	RS485_ENABLE_TX;
+	delayMicroseconds(100);
+	// write RS485 header
+	Serial1.write(EC_ID);
+	Serial1.write(0xFF^EC_ID);
+	Serial1.write(frame, 8);
+	// prepare to receive the answer
+	Serial1.flush();	// wait till all data was sent
+	delayMicroseconds(300);
+	RS485_ENABLE_RX;
+#else
 	ec_client.write((byte)0);	// wake-up from sleep mode
-	// send over RS485
-	UART1_PutChar(0);
-
-#if 0 //_DEBUG_>0
-  for (byte i=0; i<8; i++) {
-    byte tmp = frame[i];
-    if ( tmp<16 ) Serial.print(0);
-    Serial.print(tmp, HEX);
-  }
-  Serial.println();
-#endif
-
 	delay(2);	// frame delay
 	//frameSize = 8;
-	for (byte i = 0; i < 8; i++) {
-		ec_client.write(frame[i]);
-		// send over RS485
-		UART1_PutChar(frame[i]);
-	}
+	ec_client.write(frame, 8);
 	// wait till last byte was sent
 	//	delayMicroseconds(frameDelay);
 	delay(2);	// frame delay
-	// prepare to receive the answer
-	RS485_ENABLE_RX;
-	UART1_ENABLE_RX;
+#endif
 	Modbus_WaitForReply();	// wait one second long till complete reply frame is received
 //	return error_code;
 }
@@ -228,7 +241,9 @@ extern char param_readings[];
 /*****************************************************************************/
 uint8_t EC_Error(void)
 {
+#ifndef USE_RS485
 	ec_client.stop();
+#endif
 	// add the two error code to the param_readings
 	//sprintf(&param_readings[strlen(param_readings)], ",%u,%u", ec_state, mb_state);
 	sprintf_P(&param_readings[strlen(param_readings)], PSTR(",,"));  // add blank values - avoid distorted plotting
@@ -237,7 +252,8 @@ uint8_t EC_Error(void)
 /*****************************************************************************/
 void EC_ReadOCRStatus(void)
 {
-	timeout = millis() + 10000;	// max 10 seconds to wait till completition
+#define EC_STATUS_TIMEOUT	10000	// millis
+	timeout = millis();	// up to 10 seconds to wait till completion
 	while (1) {
 		WDG_RST;
 		SendFrame(EC_FRAME_READ_OCR_STATUS);
@@ -245,7 +261,7 @@ void EC_ReadOCRStatus(void)
 			if ( frame[4]==EC_RESULT_OCR_OK1 || frame[4]==EC_RESULT_OCR_OK3 )
 			break;
 		}
-  		if ( millis()>timeout ) {
+  		if ( (millis()-timeout)>EC_STATUS_TIMEOUT ) {
   			ec_state = OCR_TIMEOUT;
   			break;
   		}
@@ -257,14 +273,18 @@ void EC_ReadOCRResult(void)
 //	EC_ReadOCRStatus();
 //	if ( ec_state>EC_OK )	EC_Error();
 	uint8_t retry = 0;
-	do {
+	while ( (retry++)<20 ) {
 		SendFrame(EC_FRAME_READ_OCR_RESULT);
-	} while ( ec_state>EC_OK && (retry++)<20 );
+		if ( ec_state==EC_OK)	break;
+		delay(10);
+	}
 }
 /*****************************************************************************/
 void EC_StoreResult(void)
 {
+#ifndef USE_RS485
 	ec_client.stop();  // close client conection
+#endif
 	// swap bytes because of endianess
 	byte tmp = frame[3];
 	frame[3] = frame[6];
@@ -322,11 +342,12 @@ uint8_t EC_ReadValue(void)
 /*****************************************************************************/
 void Modbus_WaitForReply(void)
 {
+#define MODBUS_TIMEOUT	1000	// millis
 	mb_state = RECEIVING_DATA;
 	buffer = 0;
-	timeout = millis() + 1000;	// wait up to one second for reply
+	timeout = millis();	// wait up to one second for reply
 //	if ( (*ModbusPort).available() ) // is there something to check?
-	while ( timeout>millis() && mb_state==RECEIVING_DATA )
+	while ( (millis()-timeout)<MODBUS_TIMEOUT && mb_state==RECEIVING_DATA )
 	{
 		while ( ec_client.available() )
 		{
@@ -335,13 +356,15 @@ void Modbus_WaitForReply(void)
 			// If more bytes is received than BUFFER_SIZE, the overflow flag will be set and
 			// the serial buffer will be flushed as long as the slave is still responding.
 			uint8_t mb_data = ec_client.read();
+			//Serial.println(mb_data,HEX);	// debug
 			if ( mb_state==RECEIVING_DATA )	{
+				if ( buffer==0 && mb_data==0 )	continue;	// workaround for leading '0'
 				// read and check data byte
 				if ( buffer>=BUFFER_SIZE )
 					ProcessError(BUFFER_OVERFLOW);	// buffer size overflow
 				else if ( buffer==0 && mb_data!=frame[0] )
 					ProcessError(WRONG_ID);	// wrong slave ID
-				else if ( buffer==1 && (mb_data!=frame[1] || 0x80&frame[1]) )
+				else if ( buffer==1 && (mb_data!=frame[1] || (0x80&frame[1])) )
 					ProcessError(WRONG_FUNCTION);	// wrong function code
 				else if ( buffer==2 && mb_data!=2*frame[5] )
 					ProcessError(WRONG_DATA_LEN);	// wrong data lenght
@@ -362,7 +385,7 @@ void Modbus_WaitForReply(void)
 			}
 			// insert inter character time out if no new data received yet
 			if ( !ec_client.available() )
-				delayMicroseconds(t1_5);
+				delayMicroseconds(T1_5);
 		}
 
 		////////// END OF FRAME RECPTION //////////
@@ -376,7 +399,7 @@ void Modbus_WaitForReply(void)
 	WDG_RST;  // avoid reset
 	if ( buffer==0 )
 		ProcessError(REPLY_TIMEOUT);	// timeout error, no data received
-	startDelay = millis() + 2; // starting delay
+	startDelay = millis(); // starting delay
 }
 /*****************************************************************************/
 void ProcessError(mb_state_t err_code)
@@ -394,7 +417,7 @@ void ProcessSuccess()
 {
 	mb_state = MB_OK;
 	ec_state = EC_OK;
-#if 0  //_DEBUG_>0
+#if _DEBUG_>1
 	Serial.print(F("Modbus received: "));
 	for (byte i=0; i<10; i++) {
 		byte tmp = frame[i];

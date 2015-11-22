@@ -6,13 +6,18 @@
 
 #define WDG_RST  asm("wdr")
 
-#define RS485_SET_DIR_TO_OUTPUT	asm("sbi 0x17,6")	// PB6
-#define RS485_ENABLE_TX		asm("sbi 0x18,6")	// PB6
-#define RS485_ENABLE_RX		asm("cbi 0x18,6")	// PB6
+#define USE_RS485
 
+#ifdef USE_RS485
+	#define EC_ID	1
+	#define VITO_ID	2
+	#define RS485_SET_DIR_TO_OUTPUT	( DDRD |= _BV(DDRD4) )		// PD4 as output
+	#define RS485_ENABLE_TX				( PORTD |= _BV(PORTD4) )	// set PD4
+	#define RS485_ENABLE_RX				( PORTD &= ~_BV(PORTD4) )	// clear PD4
+#endif
+	
 typedef unsigned char uint8_t;
 typedef unsigned int uint16_t;
 
 #endif
-
 

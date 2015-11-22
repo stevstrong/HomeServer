@@ -38,7 +38,6 @@ void setup()
 	EtherServer_Init();
 	TimeClient_Init();
 	FileClient_Init(CS_SD_CARD);
-	UART1_Init();
 	VitoClient_Init();
 	EC_Init();
 	minute_old = 60;
@@ -79,9 +78,9 @@ IPAddress myip(192,168,100, 58);
 IPAddress gateway(192,168,100, 1);
 IPAddress subnet(255, 255, 255, 0);
 //byte ETHERNET_RESET_PIN = 0;
-#define ETHERNET_RESET_PIN_MODE_SET_TO_OUTPUT  asm("sbi 0x02, 6");  // set PE6 to output
-#define ETHERNET_RESET_PIN_SET_TO_LOW  asm("cbi 0x03, 6")
-#define ETHERNET_RESET_PIN_SET_TO_HIGH  asm("sbi 0x03, 6")
+#define ETHERNET_RESET_PIN_MODE_SET_TO_OUTPUT	( DDRE |= _BV(DDRE6) )	//asm("sbi 0x02, 6");  // set PE6 to output
+#define ETHERNET_RESET_PIN_SET_TO_LOW  			( PORTE &= ~_BV(PORTE6) )	//asm("cbi 0x03, 6")
+#define ETHERNET_RESET_PIN_SET_TO_HIGH  			( PORTE |= _BV(PORTE6) )	//asm("sbi 0x03, 6")
 	// start the Ethernet connection:
 #if _DEBUG_>0
 	Serial.print(F("Getting IP address using DHCP ... "));

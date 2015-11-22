@@ -1,14 +1,21 @@
 #include "sys_cfg.h"
-#include <SPI.h>
-#include <Ethernet.h>
-#include <Time.h>
 #include "vito_client.h"
+/*
+#ifndef USE_RS485
+ #include <Ethernet.h>
+#endif
+*/
+#include <Time.h>
 #include "vito.h"
 #include "file_client.h"
 
 // Initialize the Ethernet client library with the IP address and port of the server
 // that you want to connect to (port 23 is default for telnet);
-EthernetClient vito_client;
+#ifdef USE_RS485
+	#define vito_client	Serial1
+#else
+	EthernetClient vito_client;
+#endif
 // local functions
 byte VitoClient_Connect(void);
 byte VitoClient_GetReply(byte chrs);
@@ -21,7 +28,9 @@ char * VitoClient_ReadParameter(const char * key)
 {
 	Vito_BuildCommand( GetKeyIndex(key), 'r' );
 	VitoClient_SendGet();
+#ifndef USE_RS485
 	vito_client.stop();
+#endif
 	Vito_ParseRecData();
    return (char*)rec_frame;
 }
@@ -32,7 +41,9 @@ void VitoClient_WriteParameter(const char * key)
 {
 	Vito_BuildCommand( GetKeyIndex(key), 'w' );
 	VitoClient_SendGet();
+#ifndef USE_RS485
 	vito_client.stop();
+#endif
 }
 /*****************************************************************************/
 // returns the value of the parameter from the last reading log
@@ -51,7 +62,7 @@ char * VitoClient_GetParameterValue(char * paramName)
 void VitoClient_CheckDHW(void)
 {
 	// check weekday and time
-	if ( weekday()>1 && weekday()<7 && hour()==4 && minute()>30 )   // weekday 1 is Sunday
+	if ( weekday()>1 && weekday()<7 && hour()==5 && minute()>0 )   // weekday 1 is Sunday
 	{
 		Serial.println(F("checking dhw ... "));
 		//  get the hw temp value from last readings
@@ -91,11 +102,16 @@ void VitoClient_CheckDHW(void)
 void VitoClient_Init(void)
 {
 //  Serial.println(F("client init..."));
+#ifdef USE_RS485
+	Serial1.begin(115200);
+	RS485_SET_DIR_TO_OUTPUT;
+	RS485_ENABLE_TX;
+#endif
 	Vito_ReceiveInit();
 }
 /*****************************************************************************/
 /*****************************************************************************/
-byte Vito_ResetPoll(void)
+byte VitoClient_ResetPoll(void)
 {
 #define MAX_RETRY  3
 	byte dBuf[] = {0x16, 0x00, 0x00};
@@ -103,10 +119,19 @@ byte Vito_ResetPoll(void)
 	byte i = MAX_RETRY, ret = 0;
 	while ( ret==0 && (i--)>0 ) {
 		WDG_RST;
+		while ( vito_client.available() ) vito_client.read();  // empty receive buffer
+		vito_client.flush();  // empty transmit buffer
 		if ( VitoClient_Connect()!=1 ) continue;	// connection error
-		vito_client.flush();  // empty receive buffer
+#ifdef USE_RS485
+		delayMicroseconds(100);
+		Serial1.write(VITO_ID);
+		Serial1.write(0xFF^VITO_ID);
+		Serial1.write(dBuf, sizeof(dBuf));  // reset polling
+#else
 		vito_client.write(dBuf, 3);  // reset polling
+#endif
 		// wait for answer 06
+		WDG_RST;
 		ret = VitoClient_GetReply(1);
 	}
 	if ( ret==0 ) {	// error occurred
@@ -122,7 +147,7 @@ byte Vito_ResetPoll(void)
 byte VitoClient_Check(void)
 {
 //  Serial.println(F("client check..."));
-	byte ret = Vito_ResetPoll();
+	byte ret = VitoClient_ResetPoll();
 	// re-initialise Ethernet
 	if ( ret==0 )  {
 		File_LogError(PSTR("Vito client check failure."), NEW_ENTRY | ADD_NL | P_MEM); 
@@ -134,12 +159,20 @@ byte VitoClient_Check(void)
 /****************************************************************************/
 byte VitoClient_GetReply(byte chrs)
 {
-byte ret = 0;
+#define VITO_REPLY_TIMEOUT	3000	// millis
+	byte ret = 0;
 //  Serial.println(F("wait for reply..."));
-	uint32_t time2 = millis() + 3000;	// try up to 3 seconds
+	uint32_t time2 = millis();
+#ifdef USE_RS485
+	Serial1.flush();	// wait till all data was sent
+	delayMicroseconds(300);
+	RS485_ENABLE_RX;
+	while ( ret==0 ) {
+#else
 	while ( vito_client.connected() && ret==0 ) {
+#endif
 		WDG_RST;
-		if ( millis()>time2 ) {
+		if ( (millis()-time2)>VITO_REPLY_TIMEOUT ) {	// try up to 3 seconds
 #if _DEBUG_>0
 			Serial.println(F("ERROR: VitoClient_GetReply: reply from Vito timed out!"));
 #endif
@@ -155,10 +188,12 @@ byte ret = 0;
 					ret = Vito_ReceiveData(rd); // process only if not yet received all bytes
 			}
 		}
-		delay(10);
+		delay(1);
 	}
+#ifndef USE_RS485
 	if ( ret==0 ) vito_client.stop();  // workaround for hang-up
-	return ret;  // terminate reception if no data received after 3s or not connected anymore
+#endif
+	return ret;  // terminate reception if no data received after 3s or not connected any more
 }
 /*****************************************************************************/
 /*****************************************************************************/
@@ -168,7 +203,13 @@ byte VitoClient_SendGet(void)
 	while ( (retry--)>0 ) {
 		// connect to Vito
 		if ( VitoClient_Check()==0 ) continue;  // don't go on if there is no connection
-		// be sure that Vito client is connect before calling this function
+		// be sure that Vito client is connected before calling this function
+#ifdef USE_RS485
+		RS485_ENABLE_TX;
+		delayMicroseconds(100);
+		Serial1.write(VITO_ID);
+		Serial1.write(0xFF^VITO_ID);
+#endif
 		vito_client.write(send_frame, send_frame[1]+3);
 		// wait for reply
 		return VitoClient_GetReply(0);
@@ -299,7 +340,9 @@ void VitoClient_ReadParameters(void)
       p_ind += s_len;
       j++;  // only advance here to the next parameter, if everything was OK
 	}
+#ifndef USE_RS485
 	vito_client.stop();
+#endif
 #if _DEBUG_>0
 	Serial.println(param_readings);
 //  Serial.println(F("Vito_ReadParameters done."));
@@ -309,6 +352,13 @@ void VitoClient_ReadParameters(void)
 /*****************************************************************************/
 byte VitoClient_Connect(void)
 {
+#ifdef USE_RS485
+ #if _DEBUG_>0
+	Serial.println(F("Connected to Vito via RS485."));
+ #endif
+	RS485_ENABLE_TX;
+	return 1;
+#else
 	if ( vito_client.connected() ) return 1;
 
 	byte vito_ip[] = {192,168,100,40};
@@ -349,4 +399,5 @@ byte VitoClient_Connect(void)
 	Serial.println(F("done."));
 #endif
 	return 1;
+#endif	// #ifdef USE_RS485
 }

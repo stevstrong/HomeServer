@@ -259,9 +259,9 @@ uint8_t File_CheckMissingRecordFile(void)
 /*****************************************************************************/
 void File_WriteDataToFile(void)
 {
-DDRA = _BV(DDA0);  // set PA0 to output
+DDRA |= _BV(DDRA0);  // set PA0 to output
 // start of critical time intervall - no power down allowed during SD writing !!!
-asm("sbi 0x1b, 0");  // set LED on - PA0
+PORTA |= _BV(PORTA0);  // set LED on - PA0
 delay(1000);  // wait 1 second before writing to warn user
 
   TimeClient_UpdateFileString();  // update file string
@@ -281,7 +281,7 @@ delay(1000);  // wait 1 second before writing to warn user
 	// test if data has been correctly written.
 	File_TestWrittenData(param_readings);
 // end of user warning
-asm("cbi 0x1b, 0");
+PORTA &= ~_BV(PORTA0);
 }
 /*****************************************************************************/
 /*****************************************************************************/
