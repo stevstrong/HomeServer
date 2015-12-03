@@ -18,7 +18,7 @@ A more datailed graphical interface (vitomon.htm) shows the development of these
 
 Todo:
 ----
-- replace WiFi bridges by RS485 modules in order to increase stability (sporadically, the WiFi clients cannot be reached).
+- change Vitomon.htm in order to get the latest 10 recordings, even from different months.
 - integrate radio interface module based on nRF905 radio IC (over SPI) to communicate with the central ventilation system Pluggit P300.
 - integrate CC1101 module (over SPI) to radio control some wall outlet units.
 - implement software module to control my satellite receiver DM800se over TCP.
