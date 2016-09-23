@@ -3,34 +3,53 @@
 <head><meta charset="UTF-8"><title>VITO Data Monitor</title></head>
 <body style="font-family: Lekton; font-size: 12pt">
 	<h3>&emsp;<a href='/web/index.htm'>Home</a>&emsp;<a href='/files/'>SD-Card</a>&emsp;<a href='/web/vitomon.htm'>Data GUI</a></h3>
-	<div style="font-family:'Verdana';font-size:12px"><a id="logfile"></a>
-		<input type="button" id="prevf" value="Previous day" style="width:150px">
-		<input type="button" id="nextf" value="Next day" style="width:150px">
-		<a>or choose a date:</a>
-		<select id="sYear" size="1"><option value="15">2015</option><option value="14">2014</option></select>
+	<div style="font-family:'Verdana';font-size:12px;position:relative;"><div id="logfile" visible="hidden"></div>
+		<select id="sYear" size="1" style="margin-left:20px">
+			<option value="16">2016</option><option value="15">2015</option><option value="14">2014</option></select>
 		<select id="sMonth" size="1"></select><select id="sDay" size="1"></select>
-		<input type="button" id="dateSel" value="Select date" style="width:150px"></div>
-	<div style="position:absolute;left:30px;top:120px"><script>
-			// default canvas sizes
-			var canvasWidth = 1200;	var canvasHeigth = 600;
-			// add canvas and data place holder 
-			document.write("<canvas id='canvas_1' width="+canvasWidth+" height="+canvasHeigth+
-				" style='z-index: 1; box-shadow: 0px 0px 10px 15px #D5D5D5'></canvas>");
-			document.write("<div id='container'><textarea id='post_reply' rows='4' cols='100' placeholder='Content goes here'"+
-				" style='position:absolute;left:0px;top:"+canvasHeigth+"px; width:"+canvasWidth+"px; height:400px;'></textarea></div>");
-		</script></div>
+		<input type="button" id="dateSel" value="Select date" style="margin-left:10px;width:150px">
+		<input type="button" id="prevf" value="Previous day" style="margin-left:50px;width:150px"></input>
+		<input type="button" id="nextf" value="Next day" style="width:150px"></input></div>
+	<div style="position:absolute;left:30px;top:120px">
+		<canvas id='canvas_1' style='z-index:1;box-shadow:0px 0px 10px 15px #D5D5D5;width:1200px;height:600px'></canvas>
+		<div id='container'><textarea id='post_reply' rows='4' cols='100' placeholder='Content goes here'
+			style='position:absolute;left:0px;top:620px;width:1195px;height:400px'>
+		</textarea></div></div>
+	<script src="vitoplot.js"></script><script type="text/javascript">
+		// configuration and initiation of plot
+		var plotColor = ['#FF0000', '#00CC00', '#0000FF', '#FF8800', '#00CC88', '#8800FF', '#CCCC00', '#0088CC', '#CC00CC'];
+		var myp;
+		/**********************************************/
+		function DrawPlots() {
+			// configuration and initiation of plot
+			myp = new MakeDraw(); // create drawing object
+			myp.id = "canvas_1"; // tell the object where would you like to draw
+			myp.data = data_array; // pass n-dimensional array with data you'd like to draw, index 0 shall contain x-axis data.
+			myp.plotColor = plotColor;
+			myp.labels = data_head; // pass plot labels
+			myp.replot = ReDrawPlots; // refresh graphics
+			if (!document.getElementById("canvas_2")) {
+				myp.prepUI(); // prepare graphics
+				myp.plot(); // drawing
+			} else
+				myp.refresh();
+		}
+		/**********************************************/
+		function ReDrawPlots() { myp.refresh(); }
+		/**********************************************/
+	</script>
 	<script type="text/javascript" src="ajax2php.js"></script><script type="text/javascript">
 		var data_array, data_head;
 		var crtDate, crtTime, crtYear, crtMonth, crtDay;
 		/*******************************************/
 		var ProcessPHPData = function(rply) {
-			//alert("got answer from php!");
 			document.getElementById("post_reply").value = "";
 			document.getElementById("post_reply").value = rply.trim();
 			ParseData();
 		};
 		/*******************************************/
 		function SendRequest(pFile, pParam, pValue, cbFunc) {
+/**/
 			var myPhp = new DoPHP();
 			myPhp.phpfile = pFile;
 			myPhp.postparam = pParam;
@@ -41,14 +60,12 @@
 		function RetrieveDataSet() {
 			var sel = document.getElementById("logfile");
 			var selF = sel.text;	// get the selected file
-			//console.log("RetrieveDataSet: selected option: "+selF);
 			SendRequest("test.txt", "readfile", selF, ProcessPHPData);
 		}
 		/**********************************************/
 		function TakeNextOption(dir) {
 			console.log("TakeNextOption: dir: "+dir);
 			var sel = document.getElementById("logfile");
-			day_val = 24*3600*1000;	// one day
 			crtTime += day_val*dir;
 			SetTimeDateTags(crtTime);	// update time for current selection
 			if ( (crtTime+day_val)>(new Date().getTime()) )	document.getElementById("nextf").disabled = "true";
@@ -77,8 +94,6 @@
 			y = (td.year%100); if ( y<10 ) y="0"+y;
 			m = td.month+1; if ( m<10 ) m="0"+m;
 			d = td.day; if ( d<10 ) d="0"+d;
-			//yv = Math.floor(td.year/100).toString()+y;
-			//console.log("GetTimeDateString: yv: "+yv);
 			document.getElementById("sYear").value = y;
 			document.getElementById("sMonth").value = m;
 			document.getElementById("sDay").value = d;
@@ -126,23 +141,17 @@
 			// convert the read data into an array
 			data_array = new Array();
 			data_head = new Array();
-			//if (!repl) {alert("repl is undefined!");	return;}
 			var repl = document.getElementById("post_reply").value;
 			var arr = repl.split("\n");
-			//alert ("array length : "+arr.length); //return;
 			for (var indx in arr) {
 				// remove any line endings ' ,'
 				subarr = arr[indx].trim();
 				if ( subarr.charAt(subarr.length-1)==',' ) subarr = subarr.slice(0,-1);
 				subarr = subarr.split(",");
-				//	alert ("subarr: "+subarr);	return;
 				if ( subarr[0]=="Time" ) { // header row with parameters
-					// copy parameters
-					data_head = subarr;
-					//alert ("data head: "+data_head);	return;
+					data_head = subarr;	// copy parameters
 					continue;
 				}
-				//alert ("subarray elements : "+subarr.length);	return;
 				var tmps = subarr[0];	// time mm:hh(:)
 				indx --;
 				// convert time info into minute value
@@ -157,7 +166,6 @@
 					datVal = parseFloat(datVal);
 					data_array[indx][inds] = datVal;	// take the value
 				}
-				//alert ("data element '"+indx+"': "+data_array[indx]);	return;
 			}
 			DrawPlots();	// plot data
 		}
@@ -165,35 +173,10 @@
 		/**********************************************/
 		InitDataSet();
 		document.getElementById("logfile").onchange = function(){TakeNextOption(0);};
-		//document.getElementById("post_reply").onchange = ParseData;
 		document.getElementById("prevf").onclick = function(){TakeNextOption(-1);};
 		document.getElementById("nextf").onclick = function(){TakeNextOption(+1);};
 		document.getElementById("dateSel").onclick = function(){SelectDate();};
 		/**********************************************/
-		/**********************************************/
-		//var myVar = setInterval(function(){ TakeNextOption(0); clearInterval(myVar);},1000);
-	</script></div>
-	<div><script src="vitoplot.js"></script><script type="text/javascript">
-		// configuration and initiation of plot
-		var plotColor = ['#FF0000', '#00CC00', '#0000FF', '#FF8800', '#00CC88', '#8800FF', '#CCCC00', '#0088CC', '#CC00CC'];
-		var myp;
-		/**********************************************/
-		function DrawPlots() {
-			// configuration and initiation of plot
-			myp = new MakeDraw(); // create drawing object
-			myp.id = "canvas_1"; // tell the object where would you like to draw
-			myp.data = data_array; // pass n-dimensional array with data you'd like to draw, index 0 shall contain x-axis data.
-			myp.plotColor = plotColor;
-			myp.labels = data_head; // pass plot labels
-			myp.replot = ReDrawPlots; // prepare graphics
-			if (!document.getElementById("canvas_2")) {
-				myp.prepUI(); // prepare graphics
-				myp.plot(); // drawing
-			} else
-				myp.refresh();
-		}
-		/**********************************************/
-		function ReDrawPlots() { myp.refresh(); }
 		/**********************************************/
 	</script></div>
 </body></html>
