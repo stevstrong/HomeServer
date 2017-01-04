@@ -5,39 +5,16 @@
 	<h3>&emsp;<a href='/web/index.htm'>Home</a>&emsp;<a href='/files/'>SD-Card</a>&emsp;<a href='/web/vitomon.htm'>Data GUI</a></h3>
 	<div style="font-family:'Verdana';font-size:12px;position:relative;"><div id="logfile" visible="hidden"></div>
 		<select id="sYear" size="1" style="margin-left:20px">
-			<option value="16">2016</option><option value="15">2015</option><option value="14">2014</option></select>
+			<option value="17">2017</option><option value="16">2016</option><option value="15">2015</option><option value="14">2014</option></select>
 		<select id="sMonth" size="1"></select><select id="sDay" size="1"></select>
 		<input type="button" id="dateSel" value="Select date" style="margin-left:10px;width:150px">
 		<input type="button" id="prevf" value="Previous day" style="margin-left:50px;width:150px"></input>
 		<input type="button" id="nextf" value="Next day" style="width:150px"></input></div>
 	<div style="position:absolute;left:30px;top:120px">
-		<canvas id='canvas_1' style='z-index:1;box-shadow:0px 0px 10px 15px #D5D5D5;width:1200px;height:600px'></canvas>
+		<canvas id='canvas_1' width='1200' height='600' style='z-index:1;box-shadow:0px 0px 10px 15px #D5D5D5;'></canvas>
 		<div id='container'><textarea id='post_reply' rows='4' cols='100' placeholder='Content goes here'
 			style='position:absolute;left:0px;top:620px;width:1195px;height:400px'>
 		</textarea></div></div>
-	<script src="vitoplot.js"></script><script type="text/javascript">
-		// configuration and initiation of plot
-		var plotColor = ['#FF0000', '#00CC00', '#0000FF', '#FF8800', '#00CC88', '#8800FF', '#CCCC00', '#0088CC', '#CC00CC'];
-		var myp;
-		/**********************************************/
-		function DrawPlots() {
-			// configuration and initiation of plot
-			myp = new MakeDraw(); // create drawing object
-			myp.id = "canvas_1"; // tell the object where would you like to draw
-			myp.data = data_array; // pass n-dimensional array with data you'd like to draw, index 0 shall contain x-axis data.
-			myp.plotColor = plotColor;
-			myp.labels = data_head; // pass plot labels
-			myp.replot = ReDrawPlots; // refresh graphics
-			if (!document.getElementById("canvas_2")) {
-				myp.prepUI(); // prepare graphics
-				myp.plot(); // drawing
-			} else
-				myp.refresh();
-		}
-		/**********************************************/
-		function ReDrawPlots() { myp.refresh(); }
-		/**********************************************/
-	</script>
 	<script type="text/javascript" src="ajax2php.js"></script><script type="text/javascript">
 		var data_array, data_head;
 		var crtDate, crtTime, crtYear, crtMonth, crtDay;
@@ -66,6 +43,7 @@
 		function TakeNextOption(dir) {
 			console.log("TakeNextOption: dir: "+dir);
 			var sel = document.getElementById("logfile");
+			day_val = 24*3600*1000;	// one day millis
 			crtTime += day_val*dir;
 			SetTimeDateTags(crtTime);	// update time for current selection
 			if ( (crtTime+day_val)>(new Date().getTime()) )	document.getElementById("nextf").disabled = "true";
@@ -179,4 +157,27 @@
 		/**********************************************/
 		/**********************************************/
 	</script></div>
+	<script src="vitoplot.js"></script><script type="text/javascript">
+		// configuration and initiation of plot
+		var plotColor = ['#FF0000', '#00CC00', '#0000FF', '#FF8800', '#00CC88', '#8800FF', '#CCCC00', '#0088CC', '#CC00CC'];
+		var myp;
+		/**********************************************/
+		function DrawPlots() {
+			// configuration and initiation of plot
+			myp = new MakeDraw(); // create drawing object
+			myp.id = "canvas_1"; // tell the object where would you like to draw
+			myp.data = data_array; // pass n-dimensional array with data you'd like to draw, index 0 shall contain x-axis data.
+			myp.plotColor = plotColor;
+			myp.labels = data_head; // pass plot labels
+			myp.replot = ReDrawPlots; // refresh graphics
+			if (!document.getElementById("canvas_2")) {
+				myp.prepUI(); // prepare graphics
+				myp.plot(); // drawing
+			} else
+				myp.refresh();
+		}
+		/**********************************************/
+		function ReDrawPlots() { myp.refresh(); }
+		/**********************************************/
+	</script>
 </body></html>
