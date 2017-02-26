@@ -18,6 +18,8 @@ SdVolume volume;
 #define f_buf s_buf
 #define f_ind s_ind
 #define PATH (s_buf+5)
+static char old_readings[PARAM_READINGS_SIZE];
+//static byte temp_str[PARAM_READINGS_SIZE];
 /*****************************************************************************/
 /*****************************************************************************/
 uint8_t File_OpenFile(char * fname, uint8_t oflags)
@@ -151,6 +153,7 @@ DO NOT ENABLE the following line, as it causes system reset by printing out the 
 	// set date time callback function
 	SdFile::dateTimeCallback(File_SetDateTime);
 	File_LogMessage(PSTR("System started."), NEW_ENTRY | ADD_NL | P_MEM); // no CLEAR | 
+	old_readings[0] = 0;	// mark as invalid
 }
 /*****************************************************************************/
 /*****************************************************************************/
@@ -257,14 +260,73 @@ uint8_t File_CheckMissingRecordFile(void)
 }
 /*****************************************************************************/
 /*****************************************************************************/
+char * GetLineParam(char * ptr, uint8_t nr) 
+{
+	//Serial.print(F("ptr: ")); Serial.println(ptr);
+	//Serial.print(F("nr: ")); Serial.println(nr);
+	// get the parameter value which is the token after the counted comma
+	char * ptr1 = strtok(ptr, ",");  // token 0, is time value
+	while ( (ptr1 = strtok(NULL, ","))>0 && (--nr)>0 );
+	return ptr1;
+}
+/*****************************************************************************/
+/*****************************************************************************/
+void File_CheckDataToWrite(void)
+{
+	if ( old_readings[0]==0 ) {
+		// copy the first line even if faulty as at this moment we don't have any better
+		strcpy(old_readings, param_readings);
+		return;
+	}
+	// check for missing parameter by detecting consecutive commas: ",,"
+	byte sLen = strlen(param_readings);
+	//Serial.print(F("param str length: ")); Serial.println(sLen);
+	if ( strstr(param_readings, ",,")==NULL /*&& param_readings[sLen-1]!=','*/ ) {
+		// all data is just fine, store this new readings
+		strcpy(old_readings, param_readings);
+		return;
+	}
+	byte oLen = strlen(old_readings);
+	//Serial.println(F("< faulty string detected >"));
+	char * dPtr = param_readings;  // destination
+#define temp_str f_buf
+	strcpy(temp_str, param_readings);
+	//Serial.print(F("temp_str: ")); Serial.println(temp_str);
+	char * cPtr = temp_str;  // source
+	byte nr = 0;
+	// data contains missing parameter(s). find its order number
+	for (byte i=0; i<sLen; i++) {
+		byte c = *cPtr++;  // copy character from source to destination
+		Serial.print("Char "); Serial.print(i); Serial.print(" : "); Serial.println((char)c);
+		*dPtr++ = c;
+		if ( c==',' ) {  // token found
+			nr++;  // increment param number
+			if ( (*cPtr==',' || *cPtr<' ') ) {  // next char is comma or end of string ?
+				// found a missing param. copy old value to this position
+				char * p1 = GetLineParam(old_readings,nr);
+				if ( p1>0 ) {
+					strcpy(dPtr, p1);  // copy the old value to the new string
+					dPtr += strlen(p1);
+					//Serial.print(F(".. new str: ")); Serial.println(param_readings);
+				}
+				// restore commas from original string
+				char * p = old_readings;
+				for (byte j=0; j<oLen; j++, p++)  if ( *p==0 ) *p = ',';
+			}
+		}
+	}
+}
+/*****************************************************************************/
+/*****************************************************************************/
 void File_WriteDataToFile(void)
 {
+	File_CheckDataToWrite();
 DDRA |= _BV(DDRA0);  // set PA0 to output
 // start of critical time intervall - no power down allowed during SD writing !!!
 PORTA |= _BV(PORTA0);  // set LED on - PA0
 delay(1000);  // wait 1 second before writing to warn user
 
-  TimeClient_UpdateFileString();  // update file string
+	TimeClient_UpdateFileString();  // update file string
 	sd.chdir("/");
 	File_GetCurrentRecordFile();  // init buffer with file name
 	// try to open recording file
@@ -414,7 +476,7 @@ void File_LoadFileLine(void)
 /*****************************************************************************/
 void File_SendFile(EthernetClient cl)
 {
-	// check file type and add the corresponding descritpion to the HTTP header
+	// check file type and add the corresponding description to the HTTP header
 	if ( strstr_P(PATH, PSTR(".png"))>0 ) {
 		cl.println(F("HTTP/1.1 200 OK\r\nContent-Type: image/png\r\n"));
 	} else
@@ -605,18 +667,15 @@ char * File_GetRecordedParameter(int line_nr)
 	// get position of the parameter in the log line.
 	// read the first line of the reading log file
 	File_GetRecordLine(0);
-	// count the separating markers ',' in the string before the input param name
 	byte i = 1;
+	// count the separating markers ',' in the string before the input param name
 	char * ptr = strtok(f_buf, ",");
-	while ( (ptr = strtok(NULL, ","))!=0 && strcmp(ptr, param_name)!=0 )	i++;
+	while ( (ptr = strtok(NULL, ","))>0 && strcmp(ptr, param_name)!=0 )	i++;
 	//Serial.println(ptr);
 	if ( ptr==0 ) return 0;
 	File_GetRecordLine(line_nr);
 	//Serial.print(F("Read recorded line: ")); Serial.print(f_buf);
 	if ( f_buf[0]==0 ) return 0;  // line number was not found
 	// get the parameter value which is the token after the counted comma
-	char * ptr1 = strtok(f_buf, ",");
-	while ( (ptr1 = strtok(NULL, ","))!=0 && --i!=0 );
-	//Serial.print(F("recorded parameter value: ")); Serial.println(ptr);
-	return ptr1;
+	return GetLineParam(f_buf, i);
 }

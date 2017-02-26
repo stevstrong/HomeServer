@@ -199,7 +199,7 @@ byte VitoClient_GetReply(byte chrs)
 /*****************************************************************************/
 byte VitoClient_SendGet(void)
 {
-	byte retry = 2;
+	byte retry = 5;
 	while ( (retry--)>0 ) {
 		// connect to Vito
 		if ( VitoClient_Check()==0 ) continue;  // don't go on if there is no connection

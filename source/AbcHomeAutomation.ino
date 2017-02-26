@@ -23,7 +23,7 @@
 #define CS_SD_CARD 12  // PB4 on custom ATmega128
 
 //byte wdg_counter = 0;
-byte minute_old;
+static byte minute_old;
 ////////////////////////////////////////////////////////////////////////////////
 void setup()
 {
@@ -139,6 +139,7 @@ void loop()
 	// execute next functions only once in each minute
 	if ( minute_now!=minute_old )
 	{
+		//Serial.printF("minute: ")); Serial.println(minute_now);
 		TimeClient_UpdateFileString();  // update date and time
 		// new day events
 		if ( Time_NewDay() ) {

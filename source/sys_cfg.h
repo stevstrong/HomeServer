@@ -15,7 +15,7 @@
 	#define RS485_ENABLE_TX				( PORTD |= _BV(PORTD4) )	// set PD4
 	#define RS485_ENABLE_RX				( PORTD &= ~_BV(PORTD4) )	// clear PD4
 #endif
-	
+
 typedef unsigned char uint8_t;
 typedef unsigned int uint16_t;
 

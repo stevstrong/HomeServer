@@ -50,21 +50,21 @@ void EtherServer_ReceiveData(EthernetClient cli)
 	byte eol = 0;
    s_ind = 0;
    // read and store the first header line only
-   while ( cli.available() )
-   {
+	while ( cli.available() )
+	{
       c = cli.read();
 #if _DEBUG_>1
 //    if ( s_line>0 )  Serial.write(c);
 #endif
-	// don't store CR, store only first header line, and avoid buffer overflow      
+		// don't store CR, store only first header line, and avoid buffer overflow      
 		if ( eol==1 || c=='\r' || s_ind>=(SERVER_BUFFER_MAX_SIZE-1) )	continue;
 
-      if ( c=='\n' ) {
+		if ( c=='\n' ) {
 			c = 0;  // mark end of the received string
 			eol = 1;
 		}
-      s_buf[s_ind++] = c;	// store here the data
-   }
+		s_buf[s_ind++] = c;	// store here the data
+	}
 
 #if _DEBUG_>0
    Serial.println(s_buf);
@@ -98,6 +98,7 @@ void EtherServer_CheckForClient(void)
 		// new client. check if it is already recorded
 		byte i=0,found=0;
 		for (; i<100; i++) {
+			WDG_RST;
 			strcpy_P(s_buf, PSTR("clients.txt"));
 			File_GetFileLine(i);  // the input file name is in f_buf, the read line is returned also in f_buf
 			if ( s_buf[0]==0 ) break;

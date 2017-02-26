@@ -63,4 +63,3 @@ extern const char strom_datum[]				PROGMEM;
 
 #endif
 
-
